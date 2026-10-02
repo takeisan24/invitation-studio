@@ -26,15 +26,19 @@ function getLocalLanIp(): string | null {
   return null;
 }
 
-const supabaseUrl =
-  process.env.NEXT_PUBLIC_SUPABASE_URL || "https://nipdwmdwugipjmrmhagb.supabase.co";
-const supabaseKey =
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5pcGR3bWR3dWdpcGptcm1oYWdiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMyNDc5MDksImV4cCI6MjA5ODgyMzkwOX0.nm6ng1Zbo6ZU2b8qXU04Hg1eRbF61i24uFSh5vUbcgw";
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
 // GET /api/invitations?id=...
 export async function GET(req: NextRequest) {
   try {
+    if (!supabaseUrl || !supabaseKey) {
+      return NextResponse.json(
+        { error: "Supabase environment variables are missing." },
+        { status: 500 }
+      );
+    }
+
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
 
@@ -72,6 +76,13 @@ export async function GET(req: NextRequest) {
 // POST /api/invitations
 export async function POST(req: NextRequest) {
   try {
+    if (!supabaseUrl || !supabaseKey) {
+      return NextResponse.json(
+        { error: "Supabase environment variables are missing." },
+        { status: 500 }
+      );
+    }
+
     const body = await req.json();
     const { config, customId } = body;
 

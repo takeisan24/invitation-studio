@@ -194,8 +194,8 @@ export interface Translations {
 export const DICTIONARY: Record<Language, Translations> = {
   vi: {
     common: {
-      appName: "Invitation Studio",
-      tagline: "Thiệp mời & Khảo sát hẹn hò phong cách Editorial Vintage",
+      appName: "Cuộc Hẹn Nhỏ",
+      tagline: "Thiệp mời & Lời ngỏ hẹn hò phong cách Editorial Vintage",
       language: "Ngôn ngữ",
       musicOn: "Bật nhạc",
       musicOff: "Tắt nhạc",
@@ -401,8 +401,8 @@ export const DICTIONARY: Record<Language, Translations> = {
   },
   en: {
     common: {
-      appName: "Invitation Studio",
-      tagline: "Editorial Minimalist & Vintage First-Date Invitation",
+      appName: "Cuộc Hẹn Nhỏ",
+      tagline: "A Quiet Gathering for Two · Editorial Vintage Date Studio",
       language: "Language",
       musicOn: "Music ON",
       musicOff: "Music OFF",

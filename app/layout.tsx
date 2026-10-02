@@ -24,25 +24,26 @@ const spaceMono = Space_Mono({
   display: "swap",
 });
 
-const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://loingo.vercel.app";
+const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://cuochennho.vercel.app";
 
 export const metadata: Metadata = {
   metadataBase: new URL(appUrl),
   title: {
-    default: "Thiệp Mời Buổi Hẹn · Lời Ngỏ Tinh Tế Cho Hai Người",
-    template: "%s · Thiệp Mời Buổi Hẹn",
+    default: "Cuộc Hẹn Nhỏ · Thiệp Mời Buổi Hẹn Cho Hai Người",
+    template: "%s · Cuộc Hẹn Nhỏ",
   },
   description:
     "Tạo thiệp mời hẹn hò mang phong cách tạp chí cổ điển. Cùng nhau chọn thời gian, không gian và gu đồ uống tinh tế, không gượng gạo.",
   keywords: [
+    "cuộc hẹn nhỏ",
     "thiệp mời hẹn hò",
     "lời ngỏ đi date",
-    "invitation studio",
+    "cuochennho",
     "editorial date invite",
     "buổi hẹn đầu tiên",
   ],
-  authors: [{ name: "Invitation Studio" }],
-  creator: "Invitation Studio",
+  authors: [{ name: "Cuộc Hẹn Nhỏ", url: appUrl }],
+  creator: "Cuộc Hẹn Nhỏ",
   icons: {
     icon: "/icon.svg",
     shortcut: "/icon.svg",
@@ -52,14 +53,14 @@ export const metadata: Metadata = {
     type: "website",
     locale: "vi_VN",
     url: appUrl,
-    title: "Thiệp Mời Buổi Hẹn · Lời Ngỏ Tinh Tế Cho Hai Người",
+    title: "Cuộc Hẹn Nhỏ · Thiệp Mời Buổi Hẹn Cho Hai Người",
     description:
       "Tạo thiệp mời hẹn hò phong cách tạp chí cổ điển. Khám phá khung giờ hoàng hôn, không gian ấm cúng và tấm vé kỷ niệm đóng dấu sáp đỏ.",
-    siteName: "Thiệp Mời Buổi Hẹn",
+    siteName: "Cuộc Hẹn Nhỏ",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Thiệp Mời Buổi Hẹn · Lời Ngỏ Tinh Tế Cho Hai Người",
+    title: "Cuộc Hẹn Nhỏ · Thiệp Mời Buổi Hẹn Cho Hai Người",
     description:
       "Tạo thiệp mời hẹn hò phong cách tạp chí cổ điển dành riêng cho hai người.",
   },

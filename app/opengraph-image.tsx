@@ -107,9 +107,9 @@ export default async function Image() {
             alignItems: "center",
           }}
         >
-          <span>Thiệp Mời Buổi Hẹn</span>
+          <span>Cuộc Hẹn Nhỏ</span>
           <span style={{ color: "#9E7D4B", fontSize: "44px", marginTop: "6px" }}>
-            Lời Ngỏ Tinh Tế Dành Cho Hai Người
+            Thiệp Mời Buổi Hẹn Dành Cho Hai Người
           </span>
         </div>
 

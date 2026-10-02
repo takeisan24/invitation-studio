@@ -87,10 +87,10 @@ export default function LandingPage() {
           </div>
           <div>
             <span className="font-serif italic font-medium text-lg text-stone-900 block leading-tight">
-              {lang === "vi" ? "Thiệp Mời Buổi Hẹn" : "Invitation Studio"}
+              {lang === "vi" ? "Cuộc Hẹn Nhỏ" : "A Quiet Gathering"}
             </span>
             <span className="text-[10px] font-mono tracking-widest uppercase text-stone-500 block">
-              {lang === "vi" ? "Tinh tế & Riêng tư" : "Editorial & Vintage"}
+              {lang === "vi" ? "Thiệp mời tinh tế & riêng tư" : "Editorial & Vintage Date Studio"}
             </span>
           </div>
         </div>

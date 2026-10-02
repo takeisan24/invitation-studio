@@ -18,11 +18,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "File size exceeds 10MB limit" }, { status: 400 });
     }
 
-    const supabaseUrl =
-      process.env.NEXT_PUBLIC_SUPABASE_URL || "https://nipdwmdwugipjmrmhagb.supabase.co";
-    const supabaseKey =
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
-      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5pcGR3bWR3dWdpcGptcm1oYWdiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMyNDc5MDksImV4cCI6MjA5ODgyMzkwOX0.nm6ng1Zbo6ZU2b8qXU04Hg1eRbF61i24uFSh5vUbcgw";
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+    if (!supabaseUrl || !supabaseKey) {
+      return NextResponse.json(
+        { error: "Supabase environment variables are missing." },
+        { status: 500 }
+      );
+    }
 
     // Clean extension
     const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";

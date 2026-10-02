@@ -2,8 +2,8 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Thiệp Mời Buổi Hẹn · Lời Ngỏ Tinh Tế",
-    short_name: "Thiệp Mời",
+    name: "Cuộc Hẹn Nhỏ · Thiệp Mời Hẹn Hò",
+    short_name: "Cuộc Hẹn Nhỏ",
     description: "Tạo thiệp mời hẹn hò phong cách tạp chí cổ điển dành riêng cho hai người",
     start_url: "/",
     display: "standalone",
