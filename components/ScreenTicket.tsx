@@ -11,10 +11,14 @@ import {
   Calendar,
   ExternalLink,
   X,
+  Lock,
+  Unlock,
+  Camera,
 } from "lucide-react";
 import confetti from "canvas-confetti";
 import { domToPng, domToBlob } from "modern-screenshot";
 import { WaxSeal } from "@/components/WaxSeal";
+import { StoryCardModal } from "@/components/StoryCardModal";
 import { soundEngine } from "@/lib/audio";
 import {
   InvitationConfig,
@@ -46,6 +50,8 @@ export function ScreenTicket({
   const [isExporting, setIsExporting] = useState(false);
   const [copyFeedback, setCopyFeedback] = useState<string | null>(null);
   const [showCalendarModal, setShowCalendarModal] = useState(false);
+  const [isPrivacyMode, setIsPrivacyMode] = useState(false);
+  const [showStoryModal, setShowStoryModal] = useState(false);
 
   const ticketContent = config.stepTicket;
 
@@ -249,7 +255,7 @@ export function ScreenTicket({
     >
       <div>
         {/* Top Notice */}
-        <div className="text-center mb-5">
+        <div className="text-center mb-4">
           <span
             style={{ color: theme.palette.gold }}
             className="inline-flex items-center gap-1.5 text-[11px] font-mono tracking-widest uppercase font-medium"
@@ -258,6 +264,44 @@ export function ScreenTicket({
             <span>
               {config.language === "en" ? "CONFIRMED & SEALED" : "ĐÃ XÁC NHẬN & NIÊM PHONG"}
             </span>
+          </span>
+        </div>
+
+        {/* Privacy Mode Switch Bar */}
+        <div className="flex items-center justify-between mb-3 px-1">
+          <button
+            type="button"
+            onClick={() => {
+              soundEngine.playClick();
+              setIsPrivacyMode(!isPrivacyMode);
+            }}
+            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-mono uppercase tracking-wider border transition-all cursor-pointer ${
+              isPrivacyMode
+                ? "bg-stone-900 text-[#F9F6F0] border-stone-900 shadow-2xs"
+                : "bg-white/80 text-stone-600 border-stone-300 hover:border-stone-800"
+            }`}
+          >
+            {isPrivacyMode ? (
+              <>
+                <Lock className="w-3 h-3 text-[#9E7D4B]" />
+                <span>
+                  {config.language === "en" ? "Privacy Mode: ON" : "Chế độ riêng tư: BẬT"}
+                </span>
+              </>
+            ) : (
+              <>
+                <Unlock className="w-3 h-3 text-stone-400" />
+                <span>
+                  {config.language === "en" ? "Privacy Mode: OFF" : "Chế độ riêng tư: TẮT"}
+                </span>
+              </>
+            )}
+          </button>
+
+          <span className="text-[10.5px] font-mono text-stone-400">
+            {isPrivacyMode
+              ? (config.language === "en" ? "Initials only • Note hidden" : "Chỉ hiện chữ cái đầu & ẩn tâm sự")
+              : (config.language === "en" ? "Full details" : "Hiện đầy đủ tên & chi tiết")}
           </span>
         </div>
 
@@ -289,7 +333,7 @@ export function ScreenTicket({
           {/* Ticket Header */}
           <div
             style={{ borderColor: theme.palette.border }}
-            className="flex items-center justify-between border-b border-dashed pb-4 mb-5"
+            className="flex items-center justify-between border-b border-dashed pb-4 mb-4"
           >
             <div>
               <span
@@ -302,7 +346,9 @@ export function ScreenTicket({
                 style={{ color: theme.palette.charcoal }}
                 className="font-serif text-xl italic font-medium mt-0.5"
               >
-                {config.guestName} & {config.senderName}
+                {isPrivacyMode
+                  ? `${config.guestName[0]?.toUpperCase() || "L"} & ${config.senderName[0]?.toUpperCase() || "M"}`
+                  : `${config.guestName} & ${config.senderName}`}
               </h3>
             </div>
             <div className="text-right">
@@ -355,6 +401,7 @@ export function ScreenTicket({
                 return null;
               }
 
+              const isText = q.type === "short_text" || q.type === "long_text";
               const displayVal = Array.isArray(raw) ? raw.join(", ") : raw;
 
               return (
@@ -370,12 +417,21 @@ export function ScreenTicket({
                     >
                       {q.title}
                     </span>
-                    <span
-                      style={{ color: theme.palette.charcoal }}
-                      className="font-medium leading-snug block"
-                    >
-                      {displayVal}
-                    </span>
+                    {isText && isPrivacyMode ? (
+                      <span
+                        style={{ color: theme.palette.gold }}
+                        className="italic font-serif text-[11px] block mt-0.5 opacity-90"
+                      >
+                        ✦ {config.language === "en" ? "Kept private for two" : "Giữ riêng cho hai người"} ✦
+                      </span>
+                    ) : (
+                      <span
+                        style={{ color: theme.palette.charcoal }}
+                        className="font-medium leading-snug block"
+                      >
+                        {displayVal}
+                      </span>
+                    )}
                   </div>
                 </div>
               );
@@ -488,6 +544,28 @@ export function ScreenTicket({
           <Calendar className="w-3.5 h-3.5 text-[#9E7D4B]" />
           <span>
             {config.language === "en" ? "✦ Add to Calendar" : "✦ Thêm vào Lịch"}
+          </span>
+        </button>
+
+        {/* Story 9:16 Export Button */}
+        <button
+          onClick={() => {
+            soundEngine.playClick();
+            setShowStoryModal(true);
+          }}
+          type="button"
+          style={{
+            borderColor: theme.palette.border,
+            color: theme.palette.charcoal,
+            backgroundColor: theme.palette.cardBg,
+          }}
+          className="w-full inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-full border font-sans text-xs uppercase tracking-widest font-normal hover:border-stone-800 transition-all shadow-2xs active:scale-[0.99] cursor-pointer"
+        >
+          <Camera className="w-3.5 h-3.5 text-[#9E7D4B]" />
+          <span>
+            {config.language === "en"
+              ? "📸 Export Story 9:16"
+              : "📸 Xuất ảnh Story 9:16"}
           </span>
         </button>
 
@@ -636,6 +714,16 @@ export function ScreenTicket({
           </motion.div>
         </div>
       )}
+
+      {/* Story 9:16 Card Export Modal */}
+      <StoryCardModal
+        isOpen={showStoryModal}
+        onClose={() => setShowStoryModal(false)}
+        config={config}
+        theme={theme}
+        answers={answers}
+        initialPrivacyMode={isPrivacyMode}
+      />
     </motion.div>
   );
 }
