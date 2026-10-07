@@ -99,6 +99,7 @@ function RecipientInvitationContent() {
     return (
       <MainWizard
         customConfig={remoteConfig}
+        invitationId={idParam}
         isRecipientPureView={true}
         hideAudioToggle={false}
       />

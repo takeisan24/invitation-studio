@@ -32,6 +32,7 @@ interface ScreenTicketProps {
   theme: ThemePreset;
   answers: Record<string, string | string[]>;
   onBack: () => void;
+  invitationId?: string;
 }
 
 export function ScreenTicket({
@@ -39,6 +40,7 @@ export function ScreenTicket({
   theme,
   answers,
   onBack,
+  invitationId,
 }: ScreenTicketProps) {
   const ticketRef = useRef<HTMLDivElement>(null);
   const [isExporting, setIsExporting] = useState(false);
@@ -76,6 +78,14 @@ export function ScreenTicket({
   const handleNativeShare = async () => {
     soundEngine.playChime();
     const shareText = getShareMessage();
+
+    if (invitationId) {
+      fetch("/api/invitations", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: invitationId, answers }),
+      }).catch(() => {});
+    }
 
     if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
       try {

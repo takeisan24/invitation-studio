@@ -10,6 +10,7 @@ import {
   Send,
   Globe,
   ExternalLink,
+  Inbox,
 } from "lucide-react";
 import { DICTIONARY, Language } from "@/lib/i18n";
 import { encodeConfigToUrl } from "@/lib/config-encoder";
@@ -19,10 +20,12 @@ import {
   InvitationConfig,
 } from "@/lib/date-content";
 import { soundEngine } from "@/lib/audio";
+import { ArchiveDrawer } from "@/components/ArchiveDrawer";
 
 export default function LandingPage() {
   const router = useRouter();
   const [lang, setLang] = useState<Language>("vi");
+  const [isArchiveOpen, setIsArchiveOpen] = useState(false);
 
   useEffect(() => {
     try {
@@ -96,6 +99,22 @@ export default function LandingPage() {
         </div>
 
         <div className="flex items-center gap-3">
+          {/* Archive Drawer Trigger */}
+          <button
+            onClick={() => {
+              soundEngine.playClick();
+              setIsArchiveOpen(true);
+            }}
+            type="button"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-stone-300 text-xs font-mono uppercase tracking-wider text-stone-700 hover:border-stone-800 transition-colors bg-white/70 shadow-2xs cursor-pointer"
+            title={lang === "vi" ? "Hộp thư thiệp đã lưu" : "Saved Letter Archive"}
+          >
+            <Inbox className="w-3.5 h-3.5 text-[#9E7D4B]" />
+            <span className="hidden sm:inline">
+              {lang === "vi" ? "Hộp Thư" : "Archive"}
+            </span>
+          </button>
+
           {/* Quick Studio Shortcut for returning creators */}
           <button
             onClick={() => router.push("/customize")}
@@ -118,7 +137,7 @@ export default function LandingPage() {
 
           {/* GitHub Repo */}
           <a
-            href="https://github.com"
+            href="https://github.com/takeisan24/invitation-studio"
             target="_blank"
             rel="noreferrer"
             className="p-2 rounded-full border border-stone-300 text-stone-700 hover:text-stone-900 hover:border-stone-800 transition-colors bg-white/70"
@@ -270,6 +289,13 @@ export default function LandingPage() {
       <footer className="relative z-20 border-t border-stone-200 py-6 text-center text-xs font-mono text-stone-500 uppercase tracking-widest">
         <span>{t.landing.openSourceNote}</span>
       </footer>
+
+      {/* Archive Drawer */}
+      <ArchiveDrawer
+        isOpen={isArchiveOpen}
+        onClose={() => setIsArchiveOpen(false)}
+        lang={lang}
+      />
     </div>
   );
 }

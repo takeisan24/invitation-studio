@@ -33,6 +33,7 @@ import {
   AlignLeft,
   FileText,
   Calendar,
+  Inbox,
 } from "lucide-react";
 import { MainWizard } from "@/components/MainWizard";
 import {
@@ -49,10 +50,13 @@ import { THEME_PRESETS, ThemePreset } from "@/lib/theme-config";
 import { encodeConfigToUrl } from "@/lib/config-encoder";
 import { DICTIONARY, Language } from "@/lib/i18n";
 import { soundEngine } from "@/lib/audio";
+import { ArchiveDrawer } from "@/components/ArchiveDrawer";
+import { saveInvitationRecord } from "@/lib/archive-storage";
 
 function CustomizeContent() {
   const [lang, setLang] = useState<Language>("vi");
   const [config, setConfig] = useState<InvitationConfig>(defaultInvitationConfigVi);
+  const [isArchiveOpen, setIsArchiveOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<"theme" | "couple" | "questions" | "ticket">("theme");
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isGeneratingShare, setIsGeneratingShare] = useState(false);
@@ -346,6 +350,18 @@ function CustomizeContent() {
     setShareUrl(url);
     await updateQrCodeForUrl(url);
 
+    // Save to sender's archive drawer
+    if (generatedId) {
+      saveInvitationRecord({
+        id: generatedId,
+        guestName: config.guestName,
+        senderName: config.senderName,
+        eventDate: config.eventDate,
+        shareUrl: url,
+        createdAt: new Date().toISOString(),
+      });
+    }
+
     setIsGeneratingShare(false);
     setIsShareModalOpen(true);
   };
@@ -543,6 +559,22 @@ function CustomizeContent() {
           >
             <RotateCcw className={`w-3 h-3 ${confirmReset ? "text-rose-600 rotate-180 transition-transform" : ""}`} />
             <span>{confirmReset ? t.studio.resetConfirm : t.common.reset}</span>
+          </button>
+
+          {/* Archive Drawer Trigger */}
+          <button
+            onClick={() => {
+              soundEngine.playClick();
+              setIsArchiveOpen(true);
+            }}
+            type="button"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-stone-300 text-xs font-mono uppercase tracking-wider text-stone-700 hover:text-stone-900 hover:border-stone-800 bg-white/80 transition-all cursor-pointer shadow-2xs"
+            title={lang === "vi" ? "Hộp thư thiệp đã lưu & phản hồi" : "Saved invitations & responses"}
+          >
+            <Inbox className="w-3.5 h-3.5 text-[#9E7D4B]" />
+            <span className="hidden sm:inline">
+              {lang === "vi" ? "Hộp Thư" : "Archive"}
+            </span>
           </button>
 
           {/* Primary Share CTA */}
@@ -2098,6 +2130,13 @@ function CustomizeContent() {
           <span>{toastMessage}</span>
         </div>
       )}
+
+      {/* Archive Drawer */}
+      <ArchiveDrawer
+        isOpen={isArchiveOpen}
+        onClose={() => setIsArchiveOpen(false)}
+        lang={lang}
+      />
     </div>
   );
 }
