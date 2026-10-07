@@ -1,9 +1,9 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ArrowRight, Sparkles } from "lucide-react";
+import { ArrowRight, Sparkles, Calendar } from "lucide-react";
 import { soundEngine } from "@/lib/audio";
-import { InvitationConfig } from "@/lib/date-content";
+import { InvitationConfig, formatEventDate } from "@/lib/date-content";
 import { ThemePreset } from "@/lib/theme-config";
 
 interface ScreenCoverProps {
@@ -54,10 +54,24 @@ export function ScreenCover({ config, theme, onNext }: ScreenCoverProps) {
       <div className="my-auto py-6">
         <span
           style={{ color: theme.palette.gold }}
-          className="block text-sm font-mono tracking-widest uppercase mb-3 font-medium"
+          className="block text-sm font-mono tracking-widest uppercase mb-2 font-medium"
         >
           {config.language === "en" ? `Dear ${config.guestName},` : `Gửi ${config.guestName},`}
         </span>
+
+        {config.eventDate && (
+          <div
+            style={{
+              borderColor: theme.palette.border,
+              backgroundColor: theme.palette.cardBg,
+              color: theme.palette.taupe,
+            }}
+            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border text-[11px] font-mono tracking-wider mb-4 shadow-2xs"
+          >
+            <Calendar style={{ color: theme.palette.gold }} className="w-3 h-3 flex-shrink-0" />
+            <span>{formatEventDate(config.eventDate, config.language)}</span>
+          </div>
+        )}
 
         <h1
           style={{ color: theme.palette.charcoal }}

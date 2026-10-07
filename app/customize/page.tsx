@@ -32,6 +32,7 @@ import {
   Tags,
   AlignLeft,
   FileText,
+  Calendar,
 } from "lucide-react";
 import { MainWizard } from "@/components/MainWizard";
 import {
@@ -41,6 +42,8 @@ import {
   QuestionBlock,
   QuestionOption,
   QuestionType,
+  formatEventDate,
+  getUpcomingDate,
 } from "@/lib/date-content";
 import { THEME_PRESETS, ThemePreset } from "@/lib/theme-config";
 import { encodeConfigToUrl } from "@/lib/config-encoder";
@@ -1227,6 +1230,115 @@ function CustomizeContent() {
                     placeholder={t.studio.senderPlaceholder}
                     className="w-full bg-white border border-stone-300 rounded-lg px-3 py-2 text-sm text-stone-900 focus:outline-none focus:border-stone-900"
                   />
+                </div>
+              </div>
+
+              {/* DATE PICKER & CALENDAR SECTION */}
+              <div className="p-4 rounded-xl bg-stone-100/70 border border-stone-200 space-y-3.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-4 h-4 text-[#9E7D4B]" />
+                    <label className="text-xs font-mono uppercase text-stone-800 font-semibold tracking-wider">
+                      {t.studio.dateTitle}
+                    </label>
+                  </div>
+                  {config.eventDate && (
+                    <button
+                      type="button"
+                      onClick={() => setConfig((p) => ({ ...p, eventDate: undefined }))}
+                      className="text-[10.5px] font-mono uppercase tracking-wider text-rose-600 hover:underline cursor-pointer"
+                    >
+                      {t.studio.dateClear}
+                    </button>
+                  )}
+                </div>
+                <p className="text-xs text-stone-500 font-light -mt-1">
+                  {t.studio.dateSubtitle}
+                </p>
+
+                {/* Date Input Field & Preview */}
+                <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                  <input
+                    type="date"
+                    value={config.eventDate || ""}
+                    onChange={(e) =>
+                      setConfig((p) => ({ ...p, eventDate: e.target.value || undefined }))
+                    }
+                    className="w-full sm:w-60 bg-white border border-stone-300 rounded-lg px-3 py-2 text-sm text-stone-900 focus:outline-none focus:border-stone-900 font-mono shadow-2xs"
+                  />
+
+                  {/* Preview Badge */}
+                  <div className="flex items-center gap-2 text-xs font-mono text-stone-600 bg-white/80 border border-stone-200/80 px-3 py-2 rounded-lg flex-1">
+                    <span className="text-[10px] uppercase text-stone-400">
+                      {t.studio.datePreviewLabel}
+                    </span>
+                    <span className="font-serif italic text-stone-800 font-medium truncate">
+                      {formatEventDate(config.eventDate, lang)}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Quick Selection Shortcuts */}
+                <div className="flex flex-wrap items-center gap-1.5 pt-1 border-t border-stone-200/60">
+                  <span className="text-[10px] font-mono uppercase text-stone-400 mr-1">
+                    {lang === "vi" ? "Gợi ý nhanh:" : "Quick pick:"}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      soundEngine.playClick();
+                      setConfig((p) => ({ ...p, eventDate: getUpcomingDate(6) }));
+                    }}
+                    className={`px-2.5 py-1 rounded-md text-[11px] font-mono uppercase tracking-wider border transition-all cursor-pointer ${
+                      config.eventDate === getUpcomingDate(6)
+                        ? "bg-stone-900 text-[#F9F6F0] border-stone-900 shadow-2xs"
+                        : "bg-white text-stone-700 border-stone-300 hover:border-stone-800"
+                    }`}
+                  >
+                    {t.studio.dateQuickThisSat}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      soundEngine.playClick();
+                      setConfig((p) => ({ ...p, eventDate: getUpcomingDate(0) }));
+                    }}
+                    className={`px-2.5 py-1 rounded-md text-[11px] font-mono uppercase tracking-wider border transition-all cursor-pointer ${
+                      config.eventDate === getUpcomingDate(0)
+                        ? "bg-stone-900 text-[#F9F6F0] border-stone-900 shadow-2xs"
+                        : "bg-white text-stone-700 border-stone-300 hover:border-stone-800"
+                    }`}
+                  >
+                    {t.studio.dateQuickThisSun}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      soundEngine.playClick();
+                      setConfig((p) => ({ ...p, eventDate: getUpcomingDate(6, 1) }));
+                    }}
+                    className={`px-2.5 py-1 rounded-md text-[11px] font-mono uppercase tracking-wider border transition-all cursor-pointer ${
+                      config.eventDate === getUpcomingDate(6, 1)
+                        ? "bg-stone-900 text-[#F9F6F0] border-stone-900 shadow-2xs"
+                        : "bg-white text-stone-700 border-stone-300 hover:border-stone-800"
+                    }`}
+                  >
+                    {t.studio.dateQuickNextSat}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      soundEngine.playClick();
+                      setConfig((p) => ({ ...p, eventDate: undefined }));
+                    }}
+                    className={`px-2.5 py-1 rounded-md text-[11px] font-mono uppercase tracking-wider border transition-all cursor-pointer ${
+                      !config.eventDate
+                        ? "bg-stone-900 text-[#F9F6F0] border-stone-900 shadow-2xs"
+                        : "bg-white text-stone-700 border-stone-300 hover:border-stone-800"
+                    }`}
+                  >
+                    {t.studio.dateClear}
+                  </button>
                 </div>
               </div>
 

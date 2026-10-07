@@ -133,6 +133,15 @@ export interface Translations {
     recipientPlaceholder: string;
     senderLabel: string;
     senderPlaceholder: string;
+    dateTitle: string;
+    dateSubtitle: string;
+    dateInputLabel: string;
+    dateQuickThisSat: string;
+    dateQuickThisSun: string;
+    dateQuickNextSat: string;
+    dateClear: string;
+    datePreviewLabel: string;
+    dateFallbackText: string;
     badgeLabel: string;
     badgePlaceholder: string;
     coverTitleLabel: string;
@@ -177,6 +186,14 @@ export interface Translations {
     ticketClosingSubLabel: string;
     ticketSendLabel: string;
     ticketDownloadLabel: string;
+    btnAddToCalendar: string;
+    calendarModalTitle: string;
+    calendarModalSub: string;
+    calendarOptionApple: string;
+    calendarOptionAppleDesc: string;
+    calendarOptionGoogle: string;
+    calendarOptionGoogleDesc: string;
+    calendarDownloadedToast: string;
     // Modal
     modalMsgLabel: string;
     modalCopyMsgBtn: string;
@@ -335,6 +352,15 @@ export const DICTIONARY: Record<Language, Translations> = {
       recipientPlaceholder: "Ngọc Linh, Em, Nàng, Bạn...",
       senderLabel: "Tên người gửi (Mình, Anh, Tên bạn...):",
       senderPlaceholder: "Hoàng Minh, Mình, Anh...",
+      dateTitle: "Ngày hẹn dự kiến",
+      dateSubtitle: "Chọn một ngày cụ thể hoặc để trống cho một buổi hẹn ngẫu hứng thảnh thơi",
+      dateInputLabel: "Chọn ngày trên lịch:",
+      dateQuickThisSat: "Thứ 7 tuần này",
+      dateQuickThisSun: "Chủ nhật tuần này",
+      dateQuickNextSat: "Thứ 7 tuần sau",
+      dateClear: "Để ngỏ (Thảnh thơi)",
+      datePreviewLabel: "Hiển thị trên thiệp:",
+      dateFallbackText: "Một ngày cuối tuần thảnh thơi",
       badgeLabel: "Dòng chữ nhỏ trên đỉnh thiệp (để trống nếu muốn ẩn):",
       badgePlaceholder: "THIỆP MỜI BUỔI HẸN",
       coverTitleLabel: "Tiêu đề lớn bìa thư:",
@@ -377,6 +403,14 @@ export const DICTIONARY: Record<Language, Translations> = {
       ticketClosingSubLabel: "Lời hứa chu đáo bên dưới câu chốt:",
       ticketSendLabel: "Chữ trên nút gửi phản hồi:",
       ticketDownloadLabel: "Chữ trên nút lưu ảnh vé:",
+      btnAddToCalendar: "✦ Thêm vào Lịch",
+      calendarModalTitle: "Thêm Buổi Hẹn Vào Lịch",
+      calendarModalSub: "Lưu lại cuộc hẹn vào ứng dụng lịch để không bỏ lỡ khoảnh khắc đặc biệt này",
+      calendarOptionApple: "Apple Calendar / File Lịch (.ics)",
+      calendarOptionAppleDesc: "Thích hợp cho iPhone, iPad, Mac và các ứng dụng Lịch máy chủ",
+      calendarOptionGoogle: "Google Calendar (Mở trên web)",
+      calendarOptionGoogleDesc: "Mở trực tiếp trên Google Calendar để lưu vào tài khoản Google",
+      calendarDownloadedToast: "Đã tải file lịch (.ics) về máy ✨",
       modalMsgLabel: "Lời nhắn gửi kèm link (Tùy chỉnh):",
       modalCopyMsgBtn: "Sao chép lời nhắn kèm link 💌",
       modalCopyLinkBtn: "Chỉ sao chép đường link",
@@ -542,6 +576,15 @@ export const DICTIONARY: Record<Language, Translations> = {
       recipientPlaceholder: "Alexander, Sophia, My date...",
       senderLabel: "Sender's Name (You):",
       senderPlaceholder: "Your name...",
+      dateTitle: "Proposed Date",
+      dateSubtitle: "Select a specific date or leave blank for a spontaneous, unhurried rendezvous",
+      dateInputLabel: "Select date on calendar:",
+      dateQuickThisSat: "This Sat",
+      dateQuickThisSun: "This Sun",
+      dateQuickNextSat: "Next Sat",
+      dateClear: "Flexible Weekend",
+      datePreviewLabel: "Preview on invitation:",
+      dateFallbackText: "A gentle upcoming weekend",
       badgeLabel: "Top small badge text (leave blank to hide):",
       badgePlaceholder: "INVITATION TO AN EVENING",
       coverTitleLabel: "Main Cover Title:",
@@ -584,6 +627,14 @@ export const DICTIONARY: Record<Language, Translations> = {
       ticketClosingSubLabel: "Reassuring Subtext:",
       ticketSendLabel: "Send Button Text:",
       ticketDownloadLabel: "Save Button Text:",
+      btnAddToCalendar: "✦ Add to Calendar",
+      calendarModalTitle: "Add Date to Calendar",
+      calendarModalSub: "Save our quiet rendezvous to your calendar so you won't miss this special moment",
+      calendarOptionApple: "Apple Calendar / Calendar File (.ics)",
+      calendarOptionAppleDesc: "Compatible with iPhone, iPad, Mac, and standard calendar apps",
+      calendarOptionGoogle: "Google Calendar (Open in browser)",
+      calendarOptionGoogleDesc: "Opens directly in Google Calendar to add to your Google account",
+      calendarDownloadedToast: "Calendar event (.ics) downloaded ✨",
       modalMsgLabel: "Accompanying Message (Optional):",
       modalCopyMsgBtn: "Copy Message & Link 💌",
       modalCopyLinkBtn: "Copy Link Only",

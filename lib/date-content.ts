@@ -27,6 +27,7 @@ export interface InvitationConfig {
   language: "vi" | "en";
   guestName: string;
   senderName: string;
+  eventDate?: string; // Format: YYYY-MM-DD
   cover: {
     badge?: string;
     subHeader?: string;
@@ -269,6 +270,11 @@ export function formatDynamicShareMessage(
   const isEn = config.language === "en";
   const lines: string[] = [];
 
+  if (config.eventDate) {
+    const formatted = formatEventDate(config.eventDate, config.language);
+    lines.push(isEn ? `📅 Date: ${formatted}` : `📅 Ngày hẹn: ${formatted}`);
+  }
+
   config.questions.forEach((q) => {
     const raw = answers[q.id];
     if (raw) {
@@ -299,4 +305,164 @@ export function formatDynamicShareMessage(
     `${body}\n\n` +
     `Hẹn gặp ${config.senderName} hôm đó nha! ✨`
   );
+}
+
+/**
+ * Format ISO date string (YYYY-MM-DD) to friendly localized date string.
+ * Fallback to gentle phrase if not set or invalid.
+ */
+export function formatEventDate(dateStr?: string, lang: "vi" | "en" = "vi"): string {
+  if (!dateStr || !/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+    return lang === "en" ? "A gentle upcoming weekend" : "Một ngày cuối tuần thảnh thơi";
+  }
+  const [y, m, d] = dateStr.split("-").map(Number);
+  const date = new Date(y, m - 1, d);
+  if (isNaN(date.getTime())) {
+    return lang === "en" ? "A gentle upcoming weekend" : "Một ngày cuối tuần thảnh thơi";
+  }
+
+  const daysOfWeekVi = [
+    "Chủ Nhật",
+    "Thứ Hai",
+    "Thứ Ba",
+    "Thứ Tư",
+    "Thứ Năm",
+    "Thứ Sáu",
+    "Thứ Bảy",
+  ];
+  const daysOfWeekEn = [
+    "Sunday",
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+  ];
+  const monthsEn = [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December",
+  ];
+
+  const dayOfWeek = date.getDay();
+  if (lang === "en") {
+    return `${daysOfWeekEn[dayOfWeek]}, ${monthsEn[m - 1]} ${d}, ${y}`;
+  }
+  return `${daysOfWeekVi[dayOfWeek]}, ngày ${d} tháng ${m}, ${y}`;
+}
+
+/**
+ * Short date format e.g. "17/10/2026" or "10/17/2026"
+ */
+export function formatEventDateShort(dateStr?: string, lang: "vi" | "en" = "vi"): string {
+  if (!dateStr || !/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return "";
+  const [y, m, d] = dateStr.split("-").map(Number);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  if (lang === "en") {
+    return `${pad(m)}/${pad(d)}/${y}`;
+  }
+  return `${pad(d)}/${pad(m)}/${y}`;
+}
+
+/**
+ * Extracts meeting time string "HH:mm" from user answers if available, defaulting to "19:00".
+ */
+export function extractTimeFromAnswers(answers: Record<string, string | string[]>): string {
+  for (const val of Object.values(answers)) {
+    const text = Array.isArray(val) ? val.join(" ") : String(val);
+    const match = text.match(/\b([01]?\d|2[0-3]):([0-5]\d)\b/);
+    if (match) {
+      const hour = String(match[1]).padStart(2, "0");
+      const minute = match[2];
+      return `${hour}:${minute}`;
+    }
+  }
+  return "19:00";
+}
+
+/**
+ * Calculate upcoming target date (e.g. next Saturday or next Sunday) as YYYY-MM-DD
+ */
+export function getUpcomingDate(targetDayOfWeek: number, weeksOffset = 0): string {
+  const now = new Date();
+  const currentDay = now.getDay();
+  let daysUntil = (targetDayOfWeek - currentDay + 7) % 7;
+  if (daysUntil === 0 && weeksOffset === 0) {
+    daysUntil = 7;
+  }
+  const target = new Date(now.getFullYear(), now.getMonth(), now.getDate() + daysUntil + weeksOffset * 7);
+  const y = target.getFullYear();
+  const m = String(target.getMonth() + 1).padStart(2, "0");
+  const d = String(target.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+export interface CalendarEventData {
+  title: string;
+  details: string;
+  location?: string;
+  startDateStr: string; // YYYY-MM-DD
+  startTimeStr?: string; // HH:mm
+  durationHours?: number; // default 2.5
+}
+
+/**
+ * Generates Google Calendar link
+ */
+export function createGoogleCalendarUrl(params: CalendarEventData): string {
+  const { title, details, location = "", startDateStr, startTimeStr = "19:00", durationHours = 2.5 } = params;
+  const [y, m, d] = startDateStr.split("-").map(Number);
+  const [hour, minute] = startTimeStr.split(":").map(Number);
+  const pad = (n: number) => String(n).padStart(2, "0");
+
+  const startIso = `${y}${pad(m)}${pad(d)}T${pad(hour)}${pad(minute)}00`;
+  const endTotalMinutes = hour * 60 + minute + Math.round(durationHours * 60);
+  const endHour = Math.floor(endTotalMinutes / 60) % 24;
+  const endMinute = endTotalMinutes % 60;
+  const endIso = `${y}${pad(m)}${pad(d)}T${pad(endHour)}${pad(endMinute)}00`;
+
+  const url = new URL("https://calendar.google.com/calendar/render");
+  url.searchParams.set("action", "TEMPLATE");
+  url.searchParams.set("text", title);
+  url.searchParams.set("dates", `${startIso}/${endIso}`);
+  url.searchParams.set("details", details);
+  if (location) url.searchParams.set("location", location);
+  return url.toString();
+}
+
+/**
+ * Generates RFC 5545 iCalendar (.ics) string for Apple Calendar, Outlook, etc.
+ */
+export function createIcsFileContent(params: CalendarEventData): string {
+  const { title, details, location = "", startDateStr, startTimeStr = "19:00", durationHours = 2.5 } = params;
+  const [y, m, d] = startDateStr.split("-").map(Number);
+  const [hour, minute] = startTimeStr.split(":").map(Number);
+  const pad = (n: number) => String(n).padStart(2, "0");
+
+  const dtStart = `${y}${pad(m)}${pad(d)}T${pad(hour)}${pad(minute)}00`;
+  const endTotalMinutes = hour * 60 + minute + Math.round(durationHours * 60);
+  const endHour = Math.floor(endTotalMinutes / 60) % 24;
+  const endMinute = endTotalMinutes % 60;
+  const dtEnd = `${y}${pad(m)}${pad(d)}T${pad(endHour)}${pad(endMinute)}00`;
+  const dtStamp = new Date().toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
+  const cleanDetails = details.replace(/\r?\n/g, "\\n");
+
+  return [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "PRODID:-//Cuoc Hen Nho//Invitation Studio//VI",
+    "CALSCALE:GREGORIAN",
+    "METHOD:PUBLISH",
+    "BEGIN:VEVENT",
+    `UID:cuochennho-${Date.now()}@cuochennho.vercel.app`,
+    `DTSTAMP:${dtStamp}`,
+    `DTSTART:${dtStart}`,
+    `DTEND:${dtEnd}`,
+    `SUMMARY:${title}`,
+    `DESCRIPTION:${cleanDetails}`,
+    location ? `LOCATION:${location}` : "",
+    "STATUS:CONFIRMED",
+    "END:VEVENT",
+    "END:VCALENDAR",
+  ].filter(Boolean).join("\r\n");
 }
