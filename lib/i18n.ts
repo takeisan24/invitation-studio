@@ -126,6 +126,17 @@ export interface Translations {
     bgCandle: string;
     bgOverlayLabel: string;
     bgOverlayHint: string;
+    // Tab 1: Music
+    musicTitle: string;
+    musicSubtitle: string;
+    musicCustomOption: string;
+    musicCustomUploadBtn: string;
+    musicCustomUploading: string;
+    musicCustomUrlPlaceholder: string;
+    musicCustomTitlePrompt: string;
+    musicCustomArtistPrompt: string;
+    musicTestPlay: string;
+    musicTestStop: string;
     // Tab 2: Couple & Cover
     coupleTitle: string;
     coupleSubtitle: string;
@@ -346,6 +357,16 @@ export const DICTIONARY: Record<Language, Translations> = {
       bgCandle: "Ánh nến đêm",
       bgOverlayLabel: "Độ đậm của lớp phủ làm rõ chữ:",
       bgOverlayHint: "Kéo thanh trượt sang phải nếu muốn chữ trên thiệp tương phản rõ nét và dễ đọc hơn",
+      musicTitle: "Nhạc Nền & Đĩa Than Cổ Điển",
+      musicSubtitle: "Chọn giai điệu phát khi đối phương mở thiệp hoặc tải lên bài nhạc kỷ niệm của riêng hai bạn",
+      musicCustomOption: "Tải bài nhạc riêng lên",
+      musicCustomUploadBtn: "Tải file nhạc từ máy (.mp3, .m4a, .wav)",
+      musicCustomUploading: "Đang tải bài nhạc lên...",
+      musicCustomUrlPlaceholder: "Hoặc dán link bài nhạc trực tiếp (MP3/M4A)...",
+      musicCustomTitlePrompt: "Tên bài hát:",
+      musicCustomArtistPrompt: "Nghệ sĩ / Người thể hiện:",
+      musicTestPlay: "Nghe thử",
+      musicTestStop: "Dừng",
       coupleTitle: "Người nhận & Lời ngỏ bìa thư",
       coupleSubtitle: "Tự do xưng hô và gửi gắm những lời mở đầu chân thành nhất",
       recipientLabel: "Tên người nhận (Người ấy, Nàng, Em, Bạn...):",
@@ -570,6 +591,16 @@ export const DICTIONARY: Record<Language, Translations> = {
       bgCandle: "Candlelit Night",
       bgOverlayLabel: "Overlay Softness / Opacity:",
       bgOverlayHint: "Slide right to enhance contrast and ensure text is easy to read",
+      musicTitle: "Vinyl Background Music",
+      musicSubtitle: "Choose an atmospheric soundtrack when your date opens the invitation or upload a custom favorite song",
+      musicCustomOption: "Upload Custom Song",
+      musicCustomUploadBtn: "Upload audio from device (.mp3, .m4a, .wav)",
+      musicCustomUploading: "Uploading audio track...",
+      musicCustomUrlPlaceholder: "Or paste direct audio URL (MP3/M4A)...",
+      musicCustomTitlePrompt: "Track title:",
+      musicCustomArtistPrompt: "Artist / Performer:",
+      musicTestPlay: "Preview",
+      musicTestStop: "Stop",
       coupleTitle: "Names & Opening Envelope",
       coupleSubtitle: "Personalize names and your heartfelt opening invitation note",
       recipientLabel: "Recipient's Name (Your date):",

@@ -6,7 +6,7 @@ import { AnimatePresence } from "framer-motion";
 import { ScreenCover } from "@/components/ScreenCover";
 import { ScreenDynamicQuestion } from "@/components/ScreenDynamicQuestion";
 import { ScreenTicket } from "@/components/ScreenTicket";
-import { AudioToggle } from "@/components/AudioToggle";
+import { VintageVinylPlayer } from "@/components/VintageVinylPlayer";
 import {
   InvitationConfig,
   defaultInvitationConfigVi,
@@ -141,8 +141,14 @@ export function MainWizard({
         }}
       />
 
-      {/* Floating Audio Toggle */}
-      {!hideAudioToggle && <AudioToggle />}
+      {/* Floating Vintage Vinyl Player */}
+      {!hideAudioToggle && (
+        <VintageVinylPlayer
+          musicConfig={config.music}
+          theme={activeTheme}
+          lang={config.language}
+        />
+      )}
 
       {/* Central Editorial Frame (Safe area padding for mobile cameras & notches) */}
       <main

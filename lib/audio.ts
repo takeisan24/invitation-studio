@@ -466,6 +466,13 @@ class SoundEngine {
     }
   }
 
+  public playNeedleDropSound() {
+    if (this.isMuted) return;
+    const ctx = this.getContext();
+    if (!ctx) return;
+    this.playNeedleDrop(ctx, ctx.destination, ctx.currentTime);
+  }
+
   // --- FX: Tape Stop / Vinyl Turntable Motor Brake when stopping music ---
   private playTapeStop(ctx: AudioContext, dest: AudioNode, time: number) {
     try {

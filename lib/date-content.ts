@@ -19,6 +19,51 @@ export interface QuestionBlock {
   required?: boolean;
 }
 
+export interface MusicTrackConfig {
+  trackId: "lofi-rhodes" | "cozy-piano" | "acoustic-romance" | "custom";
+  title: string;
+  artist?: string;
+  url?: string;
+}
+
+export const CURATED_TRACKS: {
+  id: "lofi-rhodes" | "cozy-piano" | "acoustic-romance";
+  title: { vi: string; en: string };
+  artist: string;
+  desc: { vi: string; en: string };
+  url?: string;
+}[] = [
+  {
+    id: "lofi-rhodes",
+    title: { vi: "Vintage Lo-Fi Rhodes", en: "Vintage Lo-Fi Rhodes" },
+    artist: "Cuộc Hẹn Nhỏ Sessions",
+    desc: {
+      vi: "Piano điện Rhodes ấm áp, tiếng nổ đĩa than & nhịp trống chill",
+      en: "Warm Rhodes piano, analog vinyl crackle & relaxed lo-fi groove",
+    },
+  },
+  {
+    id: "cozy-piano",
+    title: { vi: "Midnight Café Jazz", en: "Midnight Café Jazz" },
+    artist: "Acoustic Coffee Duo",
+    desc: {
+      vi: "Giai điệu piano jazz êm dịu, không gian góc quán đêm tĩnh lặng",
+      en: "Gentle acoustic jazz piano, cozy quiet evening atmosphere",
+    },
+    url: "https://assets.mixkit.co/music/preview/mixkit-chill-bro-494.mp3",
+  },
+  {
+    id: "acoustic-romance",
+    title: { vi: "Acoustic Romance Guitar", en: "Acoustic Romance Guitar" },
+    artist: "Sunlight Strings",
+    desc: {
+      vi: "Tiếng đàn guitar mộc mạc, ngọt ngào và tự nhiên",
+      en: "Sweet acoustic guitar chords with sincere natural warmth",
+    },
+    url: "https://assets.mixkit.co/music/preview/mixkit-sleepy-cat-135.mp3",
+  },
+];
+
 export interface InvitationConfig {
   themeId: string;
   customPalette?: PaletteColors;
@@ -28,6 +73,7 @@ export interface InvitationConfig {
   guestName: string;
   senderName: string;
   eventDate?: string; // Format: YYYY-MM-DD
+  music?: MusicTrackConfig;
   cover: {
     badge?: string;
     subHeader?: string;
@@ -217,6 +263,11 @@ export const defaultInvitationConfigVi: InvitationConfig = {
     footerNote: "Gửi riêng từ {{sender}}",
     watermark: "Khoảnh khắc dịu dàng cho hai người",
   },
+  music: {
+    trackId: "lofi-rhodes",
+    title: "Vintage Lo-Fi Rhodes",
+    artist: "Cuộc Hẹn Nhỏ Sessions",
+  },
   questions: defaultQuestionsVi,
   stepTicket: {
     badge: "VÉ HẸN DÀNH CHO HAI NGƯỜI",
@@ -242,6 +293,11 @@ export const defaultInvitationConfigEn: InvitationConfig = {
     cta: "Open Invitation",
     footerNote: "Warmly from {{sender}}",
     watermark: "A quiet moment for two",
+  },
+  music: {
+    trackId: "lofi-rhodes",
+    title: "Vintage Lo-Fi Rhodes",
+    artist: "Cuộc Hẹn Nhỏ Sessions",
   },
   questions: defaultQuestionsEn,
   stepTicket: {

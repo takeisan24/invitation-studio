@@ -34,6 +34,10 @@ import {
   FileText,
   Calendar,
   Inbox,
+  Disc3,
+  Volume2,
+  Play,
+  Pause,
 } from "lucide-react";
 import { MainWizard } from "@/components/MainWizard";
 import {
@@ -45,6 +49,7 @@ import {
   QuestionType,
   formatEventDate,
   getUpcomingDate,
+  CURATED_TRACKS,
 } from "@/lib/date-content";
 import { THEME_PRESETS, ThemePreset } from "@/lib/theme-config";
 import { encodeConfigToUrl } from "@/lib/config-encoder";
@@ -73,11 +78,26 @@ function CustomizeContent() {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [confirmReset, setConfirmReset] = useState(false);
   const [isUploadingBg, setIsUploadingBg] = useState(false);
+  const [isUploadingAudio, setIsUploadingAudio] = useState(false);
+  const [previewingTrackId, setPreviewingTrackId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const audioFileInputRef = useRef<HTMLInputElement>(null);
+  const previewAudioRef = useRef<HTMLAudioElement | null>(null);
   const tabBodyRef = useRef<HTMLDivElement>(null);
   const tabsContainerRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
+
+  // Clean up audio on unmount
+  useEffect(() => {
+    return () => {
+      if (previewAudioRef.current) {
+        previewAudioRef.current.pause();
+        previewAudioRef.current = null;
+      }
+      soundEngine.stopMusic();
+    };
+  }, []);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -198,6 +218,8 @@ function CustomizeContent() {
           customPalette: prev.customPalette,
           backgroundImage: prev.backgroundImage,
           backgroundOverlayOpacity: prev.backgroundOverlayOpacity,
+          eventDate: prev.eventDate,
+          music: prev.music,
         };
       } else if (nextLang === "vi" && isDefaultEn) {
         return {
@@ -206,6 +228,8 @@ function CustomizeContent() {
           customPalette: prev.customPalette,
           backgroundImage: prev.backgroundImage,
           backgroundOverlayOpacity: prev.backgroundOverlayOpacity,
+          eventDate: prev.eventDate,
+          music: prev.music,
         };
       }
       return { ...prev, language: nextLang };
@@ -213,8 +237,186 @@ function CustomizeContent() {
   };
 
   const handleToggleMusic = () => {
-    const active = soundEngine.toggleMusic();
-    setIsMusicPlaying(active);
+    // If current selected track has a custom stream/file URL
+    if (config.music?.url) {
+      if (isMusicPlaying) {
+        if (previewAudioRef.current) {
+          previewAudioRef.current.pause();
+        }
+        setIsMusicPlaying(false);
+      } else {
+        soundEngine.stopMusic();
+        soundEngine.playNeedleDropSound();
+        if (!previewAudioRef.current) {
+          previewAudioRef.current = new Audio(config.music.url);
+          previewAudioRef.current.loop = true;
+        } else {
+          previewAudioRef.current.src = config.music.url;
+        }
+        previewAudioRef.current.play().catch(() => {});
+        setIsMusicPlaying(true);
+      }
+    } else {
+      // Offline Lo-Fi synthesizer engine
+      if (previewAudioRef.current) {
+        previewAudioRef.current.pause();
+      }
+      const active = soundEngine.toggleMusic();
+      setIsMusicPlaying(active);
+    }
+  };
+
+  const handleTogglePreviewTrack = (trackId: string, trackUrl?: string) => {
+    // If clicking the active preview track, pause it
+    if (previewingTrackId === trackId) {
+      if (trackId === "lofi-rhodes") {
+        soundEngine.stopMusic();
+        setIsMusicPlaying(false);
+      } else if (previewAudioRef.current) {
+        previewAudioRef.current.pause();
+      }
+      setPreviewingTrackId(null);
+      return;
+    }
+
+    // Stop currently running previews
+    if (previewingTrackId === "lofi-rhodes" || isMusicPlaying) {
+      soundEngine.stopMusic();
+      setIsMusicPlaying(false);
+    }
+    if (previewAudioRef.current) {
+      previewAudioRef.current.pause();
+    }
+
+    // Needle drop vinyl sound effect
+    soundEngine.playNeedleDropSound();
+
+    // Play target track
+    if (trackId === "lofi-rhodes") {
+      soundEngine.startMusic();
+      setIsMusicPlaying(true);
+      setPreviewingTrackId("lofi-rhodes");
+    } else if (trackUrl) {
+      if (!previewAudioRef.current) {
+        previewAudioRef.current = new Audio(trackUrl);
+      } else {
+        previewAudioRef.current.src = trackUrl;
+      }
+      previewAudioRef.current.onended = () => {
+        setPreviewingTrackId(null);
+      };
+      previewAudioRef.current.play().catch(() => {});
+      setPreviewingTrackId(trackId);
+    }
+  };
+
+  const handleSelectCuratedTrack = (track: (typeof CURATED_TRACKS)[number]) => {
+    soundEngine.playClick();
+    setConfig((p) => ({
+      ...p,
+      music: {
+        trackId: track.id,
+        title: track.title[lang],
+        artist: track.artist,
+        url: track.url,
+      },
+    }));
+  };
+
+  const handleSelectCustomTrack = () => {
+    soundEngine.playClick();
+    setConfig((p) => ({
+      ...p,
+      music: {
+        trackId: "custom",
+        title:
+          p.music?.trackId === "custom" && p.music.title
+            ? p.music.title
+            : lang === "vi"
+            ? "Bài Hát Kỷ Niệm"
+            : "Our Song",
+        artist:
+          p.music?.trackId === "custom" && p.music.artist
+            ? p.music.artist
+            : p.senderName || (lang === "vi" ? "Dành riêng cho bạn" : "Just for you"),
+        url: p.music?.trackId === "custom" ? p.music.url : "",
+      },
+    }));
+  };
+
+  const handleAudioUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const isAudio =
+      file.type.startsWith("audio/") ||
+      /\.(mp3|wav|m4a|ogg|aac|webm)$/i.test(file.name);
+
+    if (!isAudio) {
+      showToast(
+        lang === "vi"
+          ? "Vui lòng chọn file âm thanh (.mp3, .m4a, .wav)"
+          : "Please select an audio file (.mp3, .m4a, .wav)"
+      );
+      return;
+    }
+
+    if (file.size > 15 * 1024 * 1024) {
+      showToast(
+        lang === "vi"
+          ? "Dung lượng bài hát tối đa 15MB"
+          : "Audio file exceeds 15MB limit"
+      );
+      return;
+    }
+
+    setIsUploadingAudio(true);
+    showToast(t.studio.musicCustomUploading);
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await res.json();
+      if (res.ok && data.url) {
+        const cleanName = file.name.replace(/\.[^/.]+$/, "");
+        setConfig((prev) => ({
+          ...prev,
+          music: {
+            trackId: "custom",
+            title: cleanName || (lang === "vi" ? "Bài Hát Của Chúng Ta" : "Our Song"),
+            artist:
+              prev.senderName || (lang === "vi" ? "Dành riêng cho bạn" : "Just for you"),
+            url: data.url,
+          },
+        }));
+        soundEngine.playChime();
+        showToast(
+          lang === "vi"
+            ? "Đã tải bài hát lên đĩa than thành công!"
+            : "Audio track uploaded successfully!"
+        );
+      } else {
+        showToast(data.error || (lang === "vi" ? "Tải bài hát thất bại" : "Upload failed"));
+      }
+    } catch (err) {
+      console.error("Audio upload error:", err);
+      showToast(
+        lang === "vi"
+          ? "Lỗi kết nối khi tải bài hát"
+          : "Network error uploading audio"
+      );
+    } finally {
+      setIsUploadingAudio(false);
+      if (audioFileInputRef.current) {
+        audioFileInputRef.current.value = "";
+      }
+    }
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1218,6 +1420,310 @@ function CustomizeContent() {
                     <p className="text-[10px] text-stone-500">
                       {t.studio.bgOverlayHint}
                     </p>
+                  </div>
+                )}
+              </div>
+
+              {/* VINTAGE VINYL BACKGROUND MUSIC CONFIGURATION */}
+              <div className="p-4 rounded-xl bg-stone-100/80 border border-stone-200 space-y-4">
+                <div>
+                  <h3 className="font-serif italic text-lg font-medium text-stone-900 flex items-center gap-2">
+                    <Disc3 className="w-4.5 h-4.5 text-[#9E7D4B] animate-[spin_6s_linear_infinite]" />
+                    <span>{t.studio.musicTitle}</span>
+                  </h3>
+                  <p className="text-xs text-stone-500 font-light mt-0.5">
+                    {t.studio.musicSubtitle}
+                  </p>
+                </div>
+
+                {/* Hidden Audio File Input */}
+                <input
+                  ref={audioFileInputRef}
+                  type="file"
+                  accept="audio/mp3,audio/mpeg,audio/wav,audio/x-m4a,audio/m4a,audio/ogg"
+                  onChange={handleAudioUpload}
+                  className="hidden"
+                />
+
+                {/* Track Cards Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {CURATED_TRACKS.map((track) => {
+                    const isSelected =
+                      (config.music?.trackId || "lofi-rhodes") === track.id;
+                    const isPreviewing = previewingTrackId === track.id;
+
+                    return (
+                      <div
+                        key={track.id}
+                        onClick={() => handleSelectCuratedTrack(track)}
+                        className={`p-3.5 rounded-xl border transition-all cursor-pointer flex flex-col justify-between ${
+                          isSelected
+                            ? "bg-white border-stone-900 ring-2 ring-stone-900/10 shadow-xs"
+                            : "bg-white/60 border-stone-300 hover:border-stone-400 hover:bg-white"
+                        }`}
+                      >
+                        <div className="space-y-1.5">
+                          <div className="flex items-center justify-between">
+                            <span className="font-serif italic font-medium text-sm text-stone-900">
+                              {track.title[lang]}
+                            </span>
+                            {isSelected && (
+                              <span className="w-4 h-4 rounded-full bg-stone-900 text-white flex items-center justify-center text-[9px]">
+                                ✓
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-[10px] font-mono uppercase text-[#9E7D4B] tracking-wider">
+                            {track.artist}
+                          </p>
+                          <p className="text-[11px] text-stone-600 font-light leading-relaxed">
+                            {track.desc[lang]}
+                          </p>
+                        </div>
+
+                        <div className="pt-2.5 mt-2 border-t border-stone-200/80 flex items-center justify-between">
+                          <span className="text-[10px] font-mono text-stone-500">
+                            {track.id === "lofi-rhodes"
+                              ? (lang === "vi" ? "✦ Thu âm analog" : "✦ Analog Rhodes")
+                              : (lang === "vi" ? "✦ Giai điệu tuyển chọn" : "✦ Curated Track")}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleTogglePreviewTrack(track.id, track.url);
+                            }}
+                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-mono uppercase tracking-wider transition-all cursor-pointer ${
+                              isPreviewing
+                                ? "bg-[#9E7D4B] text-white shadow-xs font-semibold"
+                                : "bg-stone-100 hover:bg-stone-200 text-stone-700"
+                            }`}
+                          >
+                            {isPreviewing ? (
+                              <>
+                                <Pause className="w-2.5 h-2.5 fill-current" />
+                                <span>{t.studio.musicTestStop}</span>
+                              </>
+                            ) : (
+                              <>
+                                <Play className="w-2.5 h-2.5 fill-current ml-0.5" />
+                                <span>{t.studio.musicTestPlay}</span>
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+
+                  {/* 4th Option: Custom Track Card */}
+                  {(() => {
+                    const isSelected = config.music?.trackId === "custom";
+                    const isPreviewing = previewingTrackId === "custom";
+
+                    return (
+                      <div
+                        onClick={handleSelectCustomTrack}
+                        className={`p-3.5 rounded-xl border transition-all cursor-pointer flex flex-col justify-between ${
+                          isSelected
+                            ? "bg-white border-stone-900 ring-2 ring-stone-900/10 shadow-xs"
+                            : "bg-white/60 border-stone-300 hover:border-stone-400 hover:bg-white"
+                        }`}
+                      >
+                        <div className="space-y-1.5">
+                          <div className="flex items-center justify-between">
+                            <span className="font-serif italic font-medium text-sm text-stone-900">
+                              {t.studio.musicCustomOption}
+                            </span>
+                            {isSelected && (
+                              <span className="w-4 h-4 rounded-full bg-stone-900 text-white flex items-center justify-center text-[9px]">
+                                ✓
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-[10px] font-mono uppercase text-[#9E7D4B] tracking-wider">
+                            {config.music?.trackId === "custom" && config.music.artist
+                              ? config.music.artist
+                              : (lang === "vi" ? "Tự chọn nhạc riêng" : "Custom Choice")}
+                          </p>
+                          <p className="text-[11px] text-stone-600 font-light leading-relaxed">
+                            {lang === "vi"
+                              ? "Tải lên file MP3 bài hát kỷ niệm hoặc dán link nhạc riêng của hai bạn."
+                              : "Upload an MP3 of your favorite song or paste a direct audio link."}
+                          </p>
+                        </div>
+
+                        <div className="pt-2.5 mt-2 border-t border-stone-200/80 flex items-center justify-between">
+                          <span className="text-[10px] font-mono text-stone-500">
+                            {config.music?.trackId === "custom" && config.music.url
+                              ? (lang === "vi" ? "✓ Đã có nhạc riêng" : "✓ Audio linked")
+                              : (lang === "vi" ? "✦ Chưa tải nhạc" : "✦ No audio yet")}
+                          </span>
+                          {config.music?.trackId === "custom" && config.music.url && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleTogglePreviewTrack("custom", config.music?.url);
+                              }}
+                              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-mono uppercase tracking-wider transition-all cursor-pointer ${
+                                isPreviewing
+                                  ? "bg-[#9E7D4B] text-white shadow-xs font-semibold"
+                                  : "bg-stone-100 hover:bg-stone-200 text-stone-700"
+                              }`}
+                            >
+                              {isPreviewing ? (
+                                <>
+                                  <Pause className="w-2.5 h-2.5 fill-current" />
+                                  <span>{t.studio.musicTestStop}</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Play className="w-2.5 h-2.5 fill-current ml-0.5" />
+                                  <span>{t.studio.musicTestPlay}</span>
+                                </>
+                              )}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </div>
+
+                {/* Sub-panel for Custom Song Details when 'custom' is active */}
+                {config.music?.trackId === "custom" && (
+                  <div className="p-3.5 rounded-xl bg-white border border-stone-300 space-y-3">
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <button
+                        type="button"
+                        disabled={isUploadingAudio}
+                        onClick={() => audioFileInputRef.current?.click()}
+                        className="flex-1 flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl border border-stone-800 bg-stone-900 text-[#F9F6F0] text-xs font-mono uppercase tracking-wider hover:bg-stone-800 active:scale-98 transition-all cursor-pointer disabled:opacity-50 shadow-xs"
+                      >
+                        {isUploadingAudio ? (
+                          <>
+                            <Loader2 className="w-3.5 h-3.5 animate-spin text-[#9E7D4B]" />
+                            <span>{t.studio.musicCustomUploading}</span>
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="w-3.5 h-3.5 text-[#9E7D4B]" />
+                            <span>{t.studio.musicCustomUploadBtn}</span>
+                          </>
+                        )}
+                      </button>
+
+                      {config.music.url && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (previewingTrackId === "custom") {
+                              previewAudioRef.current?.pause();
+                              setPreviewingTrackId(null);
+                            }
+                            setConfig((p) => ({
+                              ...p,
+                              music: {
+                                trackId: "lofi-rhodes",
+                                title: "Vintage Lo-Fi Rhodes",
+                                artist: "Cuộc Hẹn Nhỏ Sessions",
+                              },
+                            }));
+                          }}
+                          className="px-3 py-2 rounded-xl border border-stone-300 text-stone-600 hover:text-rose-600 hover:border-rose-300 text-xs font-mono uppercase tracking-wider transition-colors"
+                        >
+                          {lang === "vi" ? "Gỡ bài hát" : "Remove"}
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Active Custom Audio Badge */}
+                    {config.music.url && (
+                      <div className="flex items-center gap-2.5 p-2 bg-emerald-50/60 border border-emerald-200 rounded-lg">
+                        <Volume2 className="w-4 h-4 text-emerald-700 flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <span className="text-[10px] font-mono uppercase tracking-wider text-emerald-700 font-semibold block">
+                            {lang === "vi" ? "✓ Đã tải bài hát lên đĩa than" : "✓ Custom track loaded"}
+                          </span>
+                          <p className="text-[11px] text-stone-600 truncate font-mono">
+                            {config.music.url}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Custom Song Title & Artist Inputs */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+                      <div className="space-y-1">
+                        <label className="block text-[10px] font-mono uppercase text-stone-600">
+                          {t.studio.musicCustomTitlePrompt}
+                        </label>
+                        <input
+                          type="text"
+                          value={config.music.title}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setConfig((p) => ({
+                              ...p,
+                              music: {
+                                ...(p.music || { trackId: "custom" }),
+                                trackId: "custom",
+                                title: val,
+                              },
+                            }));
+                          }}
+                          placeholder={lang === "vi" ? "Ví dụ: Bài ca kỷ niệm..." : "e.g., Our Song..."}
+                          className="w-full bg-[#FAF8F5] border border-stone-300 rounded-lg px-2.5 py-1.5 text-xs text-stone-900 focus:outline-none"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="block text-[10px] font-mono uppercase text-stone-600">
+                          {t.studio.musicCustomArtistPrompt}
+                        </label>
+                        <input
+                          type="text"
+                          value={config.music.artist || ""}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setConfig((p) => ({
+                              ...p,
+                              music: {
+                                ...(p.music || { trackId: "custom", title: "Custom Track" }),
+                                trackId: "custom",
+                                artist: val,
+                              },
+                            }));
+                          }}
+                          placeholder={lang === "vi" ? "Ví dụ: Vũ, Lê Cát Trọng Lý, hoặc Bạn..." : "e.g., Artist or you..."}
+                          className="w-full bg-[#FAF8F5] border border-stone-300 rounded-lg px-2.5 py-1.5 text-xs text-stone-900 focus:outline-none"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Or Direct MP3 URL Input */}
+                    <div className="space-y-1 pt-1 border-t border-stone-200">
+                      <label className="block text-[10px] font-mono uppercase text-stone-600">
+                        {t.studio.musicCustomUrlPlaceholder}
+                      </label>
+                      <input
+                        type="url"
+                        value={config.music.url || ""}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setConfig((p) => ({
+                            ...p,
+                            music: {
+                              ...(p.music || { trackId: "custom", title: "Custom Track" }),
+                              trackId: "custom",
+                              url: val,
+                            },
+                          }));
+                        }}
+                        placeholder="https://example.com/audio.mp3"
+                        className="w-full bg-[#FAF8F5] border border-stone-300 rounded-lg px-2.5 py-1.5 text-xs font-mono text-stone-900 focus:outline-none"
+                      />
+                    </div>
                   </div>
                 )}
               </div>
