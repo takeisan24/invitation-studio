@@ -8,7 +8,7 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: "*",
         allow: ["/", "/onboarding", "/customize"],
-        disallow: ["/api/", "/invite"], // Keep personal invite links private
+        disallow: ["/api/", "/invite", "/i/", "/reply"], // Keep personal invite links private
       },
     ],
     sitemap: `${appUrl}/sitemap.xml`,
