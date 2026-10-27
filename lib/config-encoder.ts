@@ -6,20 +6,8 @@ import {
 } from "./date-content";
 
 /**
- * Encodes an InvitationConfig object into a compact, URL-safe compressed string using lz-string
- */
-export function encodeConfigToUrl(config: InvitationConfig): string {
-  try {
-    const json = JSON.stringify(config);
-    return LZString.compressToEncodedURIComponent(json);
-  } catch (err) {
-    console.error("Failed to encode configuration:", err);
-    return "";
-  }
-}
-
-/**
- * Decodes a URL parameter back into an InvitationConfig object.
+ * Decodes the full-config `?c=` links made before 2026-10 (new links use
+ * lib/invite-codec). Kept so invites already sent keep opening.
  * Supports both modern LZString compressed format and legacy URL-safe Base64 strings.
  */
 export function decodeConfigFromUrl(encoded: string): InvitationConfig | null {

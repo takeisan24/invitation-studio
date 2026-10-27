@@ -52,22 +52,29 @@ import {
   CURATED_TRACKS,
 } from "@/lib/date-content";
 import { THEME_PRESETS, ThemePreset } from "@/lib/theme-config";
-import { encodeConfigToUrl } from "@/lib/config-encoder";
+import { createLocalInviteKey, encodeInvite } from "@/lib/invite-codec";
+import { AUDIO_MAX_BYTES, UploadError, uploadAsset } from "@/lib/upload-client";
+import { useSearchParams } from "next/navigation";
 import { DICTIONARY, Language } from "@/lib/i18n";
 import { soundEngine } from "@/lib/audio";
 import { ArchiveDrawer } from "@/components/ArchiveDrawer";
-import { saveInvitationRecord } from "@/lib/archive-storage";
+import { buildAnswerLabels, saveInvitationRecord } from "@/lib/archive-storage";
+
+type ShareTarget = { kind: "short" | "hash"; key: string; value: string };
 
 function CustomizeContent() {
   const [lang, setLang] = useState<Language>("vi");
   const [config, setConfig] = useState<InvitationConfig>(defaultInvitationConfigVi);
-  const [isArchiveOpen, setIsArchiveOpen] = useState(false);
+  const searchParams = useSearchParams();
+  const [isArchiveOpen, setIsArchiveOpen] = useState(() => searchParams.get("archive") === "1");
   const [activeTab, setActiveTab] = useState<"theme" | "couple" | "questions" | "ticket">("theme");
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isGeneratingShare, setIsGeneratingShare] = useState(false);
   const [shareUrl, setShareUrl] = useState("");
   const [qrCodeUrl, setQrCodeUrl] = useState("");
   const [invitationId, setInvitationId] = useState<string>("");
+  const [shareTarget, setShareTarget] = useState<ShareTarget | null>(null);
+  const lastShareRef = useRef<{ configJson: string; target: ShareTarget } | null>(null);
   const [lanIp, setLanIp] = useState<string | null>(null);
   const [shareMode, setShareMode] = useState<"wifi" | "local">("wifi");
   const [copied, setCopied] = useState(false);
@@ -344,29 +351,24 @@ function CustomizeContent() {
     }));
   };
 
+  const uploadErrorMessage = (err: unknown, kind: "bg" | "audio") => {
+    const code = err instanceof UploadError ? err.code : "failed";
+    if (kind === "bg") {
+      return code === "unavailable" ? t.studio.uploadUnavailable : t.studio.bgUploadError;
+    }
+    if (code === "type") return t.studio.audioUploadTypeError;
+    if (code === "size") return t.studio.audioUploadSizeError;
+    if (code === "unavailable") return t.studio.uploadUnavailable;
+    return lang === "vi" ? "Tải bài hát thất bại" : "Upload failed";
+  };
+
   const handleAudioUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const isAudio =
-      file.type.startsWith("audio/") ||
-      /\.(mp3|wav|m4a|ogg|aac|webm)$/i.test(file.name);
-
-    if (!isAudio) {
-      showToast(
-        lang === "vi"
-          ? "Vui lòng chọn file âm thanh (.mp3, .m4a, .wav)"
-          : "Please select an audio file (.mp3, .m4a, .wav)"
-      );
-      return;
-    }
-
-    if (file.size > 15 * 1024 * 1024) {
-      showToast(
-        lang === "vi"
-          ? "Dung lượng bài hát tối đa 15MB"
-          : "Audio file exceeds 15MB limit"
-      );
+    if (file.size > AUDIO_MAX_BYTES) {
+      showToast(t.studio.audioUploadSizeError);
+      if (audioFileInputRef.current) audioFileInputRef.current.value = "";
       return;
     }
 
@@ -374,43 +376,27 @@ function CustomizeContent() {
     showToast(t.studio.musicCustomUploading);
 
     try {
-      const formData = new FormData();
-      formData.append("file", file);
-
-      const res = await fetch("/api/upload", {
-        method: "POST",
-        body: formData,
-      });
-
-      const data = await res.json();
-      if (res.ok && data.url) {
-        const cleanName = file.name.replace(/\.[^/.]+$/, "");
-        setConfig((prev) => ({
-          ...prev,
-          music: {
-            trackId: "custom",
-            title: cleanName || (lang === "vi" ? "Bài Hát Của Chúng Ta" : "Our Song"),
-            artist:
-              prev.senderName || (lang === "vi" ? "Dành riêng cho bạn" : "Just for you"),
-            url: data.url,
-          },
-        }));
-        soundEngine.playChime();
-        showToast(
-          lang === "vi"
-            ? "Đã tải bài hát lên đĩa than thành công!"
-            : "Audio track uploaded successfully!"
-        );
-      } else {
-        showToast(data.error || (lang === "vi" ? "Tải bài hát thất bại" : "Upload failed"));
-      }
-    } catch (err) {
-      console.error("Audio upload error:", err);
+      const url = await uploadAsset(file, "audio");
+      const cleanName = file.name.replace(/\.[^/.]+$/, "");
+      setConfig((prev) => ({
+        ...prev,
+        music: {
+          trackId: "custom",
+          title: cleanName || (lang === "vi" ? "Bài Hát Của Chúng Ta" : "Our Song"),
+          artist:
+            prev.senderName || (lang === "vi" ? "Dành riêng cho bạn" : "Just for you"),
+          url,
+        },
+      }));
+      soundEngine.playChime();
       showToast(
         lang === "vi"
-          ? "Lỗi kết nối khi tải bài hát"
-          : "Network error uploading audio"
+          ? "Đã tải bài hát lên đĩa than thành công!"
+          : "Audio track uploaded successfully!"
       );
+    } catch (err) {
+      console.error("Audio upload error:", err);
+      showToast(uploadErrorMessage(err, "audio"));
     } finally {
       setIsUploadingAudio(false);
       if (audioFileInputRef.current) {
@@ -428,38 +414,21 @@ function CustomizeContent() {
       return;
     }
 
-    if (file.size > 10 * 1024 * 1024) {
-      showToast(t.studio.bgUploadError);
-      return;
-    }
-
     setIsUploadingBg(true);
     showToast(t.studio.bgUploading);
 
     try {
-      const formData = new FormData();
-      formData.append("file", file);
-
-      const res = await fetch("/api/upload", {
-        method: "POST",
-        body: formData,
-      });
-
-      const data = await res.json();
-      if (res.ok && data.url) {
-        setConfig((prev) => ({
-          ...prev,
-          backgroundImage: data.url,
-          backgroundOverlayOpacity: prev.backgroundOverlayOpacity || 0.35,
-        }));
-        soundEngine.playChime();
-        showToast(t.studio.bgUploadSuccess);
-      } else {
-        showToast(t.studio.bgUploadError);
-      }
+      const url = await uploadAsset(file, "bg");
+      setConfig((prev) => ({
+        ...prev,
+        backgroundImage: url,
+        backgroundOverlayOpacity: prev.backgroundOverlayOpacity || 0.35,
+      }));
+      soundEngine.playChime();
+      showToast(t.studio.bgUploadSuccess);
     } catch (err) {
       console.error("Upload error:", err);
-      showToast(t.studio.bgUploadError);
+      showToast(uploadErrorMessage(err, "bg"));
     } finally {
       setIsUploadingBg(false);
       if (e.target) {
@@ -486,11 +455,7 @@ function CustomizeContent() {
       base = `http://${activeIp}${port}`;
     }
 
-    if (isShortId) {
-      return `${base}/invite?id=${idOrEncoded}`;
-    } else {
-      return `${base}/invite?c=${idOrEncoded}`;
-    }
+    return isShortId ? `${base}/i/${idOrEncoded}` : `${base}/invite#c=${idOrEncoded}`;
   };
 
   const updateQrCodeForUrl = async (url: string) => {
@@ -510,29 +475,42 @@ function CustomizeContent() {
     }
   };
 
-  // Generate shareable link
+  // Generate shareable link: a short /i/<id> link when storage is available,
+  // otherwise a self-contained /invite#c= link. Reuses the last link while the
+  // config is unchanged, so reopening the modal does not create another blob.
   const handleOpenShareModal = async () => {
     setIsGeneratingShare(true);
 
-    let generatedId = "";
-    let detectedLanIp: string | null = null;
+    const configJson = JSON.stringify(config);
+    const reuse = lastShareRef.current?.configJson === configJson ? lastShareRef.current : null;
+    let target = reuse?.target ?? null;
+    let detectedLanIp: string | null = lanIp;
 
-    try {
-      const res = await fetch("/api/invitations", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ config }),
-      });
-      const data = await res.json();
-      if (res.ok && data.success && data.id) {
-        generatedId = data.id;
+    if (!target) {
+      try {
+        const res = await fetch("/api/invites", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ config }),
+        });
+        const data = await res.json();
         detectedLanIp = data.lanIp || null;
-        setInvitationId(generatedId);
-        setLanIp(detectedLanIp);
+        if (res.ok && typeof data.id === "string") {
+          target = { kind: "short", key: data.id, value: data.id };
+        }
+      } catch {
+        // Storage unreachable: fall through to a #c= link.
       }
-    } catch {
-      // Gracefully fall back to URL compression if database is unreachable
+      if (!target) {
+        const key = createLocalInviteKey();
+        target = { kind: "hash", key, value: encodeInvite(config, key) };
+      }
+      lastShareRef.current = { configJson, target };
     }
+
+    setInvitationId(target.key);
+    setShareTarget(target);
+    setLanIp(detectedLanIp);
 
     const isLocalhost =
       typeof window !== "undefined" &&
@@ -541,42 +519,29 @@ function CustomizeContent() {
     const defaultMode: "wifi" | "local" = isLocalhost && detectedLanIp ? "wifi" : "local";
     setShareMode(defaultMode);
 
-    let url = "";
-    if (generatedId) {
-      url = buildShareUrl(generatedId, true, defaultMode, detectedLanIp);
-    } else {
-      const encoded = encodeConfigToUrl(config);
-      url = buildShareUrl(encoded, false, defaultMode, detectedLanIp);
-    }
-
+    const url = buildShareUrl(target.value, target.kind === "short", defaultMode, detectedLanIp);
     setShareUrl(url);
     await updateQrCodeForUrl(url);
 
-    // Save to sender's archive drawer
-    if (generatedId) {
-      saveInvitationRecord({
-        id: generatedId,
-        guestName: config.guestName,
-        senderName: config.senderName,
-        eventDate: config.eventDate,
-        shareUrl: url,
-        createdAt: new Date().toISOString(),
-      });
-    }
+    // Save to sender's archive drawer (this device only)
+    saveInvitationRecord({
+      id: target.key,
+      guestName: config.guestName,
+      senderName: config.senderName,
+      eventDate: config.eventDate,
+      shareUrl: url,
+      createdAt: new Date().toISOString(),
+      labels: buildAnswerLabels(config),
+    });
 
     setIsGeneratingShare(false);
     setIsShareModalOpen(true);
   };
 
   const handleSwitchShareMode = async (mode: "wifi" | "local") => {
+    if (!shareTarget) return;
     setShareMode(mode);
-    let newUrl = "";
-    if (invitationId) {
-      newUrl = buildShareUrl(invitationId, true, mode);
-    } else {
-      const encoded = encodeConfigToUrl(config);
-      newUrl = buildShareUrl(encoded, false, mode);
-    }
+    const newUrl = buildShareUrl(shareTarget.value, shareTarget.kind === "short", mode);
     setShareUrl(newUrl);
     await updateQrCodeForUrl(newUrl);
   };
@@ -1440,7 +1405,7 @@ function CustomizeContent() {
                 <input
                   ref={audioFileInputRef}
                   type="file"
-                  accept="audio/mp3,audio/mpeg,audio/wav,audio/x-m4a,audio/m4a,audio/ogg"
+                  accept=".mp3,.m4a,.aac,audio/mpeg,audio/mp4,audio/x-m4a,audio/aac"
                   onChange={handleAudioUpload}
                   className="hidden"
                 />
