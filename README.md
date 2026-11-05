@@ -10,6 +10,12 @@
 [![Supabase](https://img.shields.io/badge/Database-Supabase-3ECF8E?style=for-the-badge&logo=supabase)](https://supabase.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
 
+<p align="center">
+  <a href="https://cuochennho.vercel.app">
+    <img src="docs/screenshot.png" alt="Trang chủ Cuộc Hẹn Nhỏ: tiêu đề 'Một Buổi Hẹn Nhỏ Dành Riêng Cho Hai Người' và tấm vé hẹn mẫu" width="100%">
+  </a>
+</p>
+
 ---
 
 ## 🌟 Điểm Nhấn Cốt Lõi (Key Features)
