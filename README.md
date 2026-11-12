@@ -72,28 +72,7 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 ```
 
 ### 4. Thiết lập Supabase Database & Storage
-Chạy câu lệnh SQL sau trong **SQL Editor** trên Supabase Dashboard:
-
-```sql
--- Tạo bảng lưu trữ thiệp mời
-CREATE TABLE IF NOT EXISTS public.invitations (
-    id TEXT PRIMARY KEY,
-    config JSONB NOT NULL,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
--- Kích hoạt Row-Level Security
-ALTER TABLE public.invitations ENABLE ROW LEVEL SECURITY;
-
--- Cho phép đọc & tạo thiệp công khai không cần đăng nhập
-CREATE POLICY "Allow public read invitations" 
-ON public.invitations FOR SELECT TO anon, authenticated USING (true);
-
-CREATE POLICY "Allow public insert invitations" 
-ON public.invitations FOR INSERT TO anon, authenticated WITH CHECK (true);
-```
-
-Tạo một Storage Bucket tên là `invitation-backgrounds` (chế độ **Public**) để người dùng tải ảnh nền.
+Cấu hình cơ sở dữ liệu và chính sách bảo mật được quản lý riêng, không công bố ở đây.
 
 ### 5. Khởi động môi trường dev
 ```bash
