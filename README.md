@@ -10,6 +10,12 @@
 [![Vercel Blob](https://img.shields.io/badge/Storage-Vercel%20Blob-black?style=for-the-badge&logo=vercel)](https://vercel.com/docs/vercel-blob)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
 
+<p align="center">
+  <a href="https://cuochennho.vercel.app">
+    <img src="docs/screenshot.png" alt="Trang chủ Cuộc Hẹn Nhỏ: tiêu đề 'Một Buổi Hẹn Nhỏ Dành Riêng Cho Hai Người' và tấm vé hẹn mẫu" width="100%">
+  </a>
+</p>
+
 ---
 
 ## 🌟 Điểm Nhấn Cốt Lõi (Key Features)
