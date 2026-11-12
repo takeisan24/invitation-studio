@@ -30,6 +30,7 @@ import {
   createIcsFileContent,
 } from "@/lib/date-content";
 import { ThemePreset } from "@/lib/theme-config";
+import { encodeReply } from "@/lib/invite-codec";
 
 interface ScreenTicketProps {
   config: InvitationConfig;
@@ -76,22 +77,28 @@ export function ScreenTicket({
     };
   }, [theme]);
 
+  // Answers go back to the sender only through this link, which the recipient
+  // chooses to send; nothing is stored on a server.
+  const getReplyUrl = () =>
+    `${window.location.origin}/reply#r=${encodeReply({
+      key: invitationId || "",
+      language: config.language,
+      guestName: config.guestName,
+      answers,
+    })}`;
+
   const getShareMessage = () => {
-    return formatDynamicShareMessage(config, answers);
+    const replyLabel =
+      config.language === "en"
+        ? "Open to save my answers in your archive:"
+        : "Mở link này để lưu câu trả lời vào hộp thư của bạn:";
+    return `${formatDynamicShareMessage(config, answers)}\n\n${replyLabel}\n${getReplyUrl()}`;
   };
 
   // 1. Native Share Handler (Direct to Zalo/Messenger/iMessage)
   const handleNativeShare = async () => {
     soundEngine.playChime();
     const shareText = getShareMessage();
-
-    if (invitationId) {
-      fetch("/api/invitations", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: invitationId, answers }),
-      }).catch(() => {});
-    }
 
     if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
       try {
@@ -135,7 +142,6 @@ export function ScreenTicket({
               ? `First Date Admission Pass for ${config.guestName} & ${config.senderName}`
               : `Vé hẹn đầu tiên dành cho ${config.guestName} & ${config.senderName}`,
           text: shareText,
-          url: window.location.href,
         });
       } catch (err: unknown) {
         if ((err as Error).name !== "AbortError") {

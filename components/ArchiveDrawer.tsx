@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   X,
-  RotateCcw,
   ExternalLink,
   Copy,
   Check,
@@ -21,7 +20,7 @@ import {
   SavedInvitationRecord,
   getSavedInvitations,
   removeSavedInvitation,
-  syncInvitationsWithServer,
+  formatAnswer,
 } from "@/lib/archive-storage";
 import { formatEventDate } from "@/lib/date-content";
 import { soundEngine } from "@/lib/audio";
@@ -38,38 +37,16 @@ export function ArchiveDrawer({
   lang = "vi",
 }: ArchiveDrawerProps) {
   const [invitations, setInvitations] = useState<SavedInvitationRecord[]>([]);
-  const [isSyncing, setIsSyncing] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [selectedItem, setSelectedItem] = useState<SavedInvitationRecord | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
-  // Load from local storage and sync when drawer opens
+  // The archive is local-only; answers land here when the sender opens a reply link.
   useEffect(() => {
     if (isOpen) {
-      queueMicrotask(() => {
-        const local = getSavedInvitations();
-        setInvitations(local);
-        setIsSyncing(true);
-      });
-
-      // Auto sync in background
-      syncInvitationsWithServer()
-        .then((updated) => setInvitations(updated))
-        .finally(() => setIsSyncing(false));
+      queueMicrotask(() => setInvitations(getSavedInvitations()));
     }
   }, [isOpen]);
-
-  const handleManualSync = async () => {
-    soundEngine.playClick();
-    setIsSyncing(true);
-    try {
-      const updated = await syncInvitationsWithServer();
-      setInvitations(updated);
-      soundEngine.playChime();
-    } finally {
-      setIsSyncing(false);
-    }
-  };
 
   const handleCopyLink = (item: SavedInvitationRecord) => {
     soundEngine.playClick();
@@ -130,17 +107,6 @@ export function ArchiveDrawer({
               <div className="flex items-center gap-1.5">
                 <button
                   type="button"
-                  onClick={handleManualSync}
-                  disabled={isSyncing}
-                  title={isEn ? "Sync latest responses" : "Đồng bộ phản hồi mới"}
-                  className="p-2 rounded-lg text-stone-600 hover:text-stone-900 hover:bg-stone-100 transition-all cursor-pointer disabled:opacity-50"
-                >
-                  <RotateCcw
-                    className={`w-4 h-4 ${isSyncing ? "animate-spin text-[#9E7D4B]" : ""}`}
-                  />
-                </button>
-                <button
-                  type="button"
                   onClick={onClose}
                   className="p-2 rounded-lg text-stone-500 hover:text-stone-900 hover:bg-stone-100 transition-all cursor-pointer"
                 >
@@ -162,8 +128,8 @@ export function ArchiveDrawer({
                     </h3>
                     <p className="text-xs text-stone-500 mt-1 max-w-xs font-light leading-relaxed">
                       {isEn
-                        ? "When you create and share an invitation, it will automatically be archived here so you can check your date's choices anytime."
-                        : "Khi bạn tạo thiệp và chia sẻ đường link, thiệp sẽ tự động lưu vào đây để bạn dễ dàng theo dõi phản hồi của người ấy nhé."}
+                        ? "Invitations you share are kept here, on this device only. When your date sends back their reply link, open it on this device to save their answers."
+                        : "Thiệp bạn chia sẻ được lưu tại đây, chỉ trên máy này. Khi người ấy gửi lại link trả lời, hãy mở link trên máy này để lưu câu trả lời nhé."}
                     </p>
                   </div>
                 </div>
@@ -233,12 +199,14 @@ export function ArchiveDrawer({
                             </button>
                           ) : (
                             <span className="text-[11px] text-stone-400 font-light italic">
-                              {isEn ? "Waiting for your date..." : "Đang đợi người ấy mở thiệp..."}
+                              {isEn ? "No reply link received yet" : "Chưa nhận được link trả lời"}
                             </span>
                           )}
                         </div>
 
                         <div className="flex items-center gap-1">
+                          {item.shareUrl && (
+                          <>
                           <button
                             type="button"
                             onClick={() => handleCopyLink(item)}
@@ -261,6 +229,8 @@ export function ArchiveDrawer({
                           >
                             <ExternalLink className="w-3.5 h-3.5" />
                           </a>
+                          </>
+                          )}
 
                           {isConfirmingDelete ? (
                             <div className="flex items-center gap-1 pl-1">
@@ -363,7 +333,8 @@ export function ArchiveDrawer({
 
                     {Object.entries(selectedItem.answers).map(([key, val], idx) => {
                       if (!val || (Array.isArray(val) && val.length === 0)) return null;
-                      const displayVal = Array.isArray(val) ? val.join(", ") : String(val);
+                      const label = selectedItem.labels?.[key];
+                      const displayVal = formatAnswer(val, label);
 
                       return (
                         <div
@@ -372,7 +343,7 @@ export function ArchiveDrawer({
                         >
                           <div className="flex items-center justify-between">
                             <span className="text-[10px] font-mono uppercase tracking-wider text-stone-400">
-                              {isEn ? `Choice 0${idx + 1}` : `Lựa chọn 0${idx + 1}`}
+                              {label?.title ?? (isEn ? `Choice 0${idx + 1}` : `Lựa chọn 0${idx + 1}`)}
                             </span>
                             <Sparkles className="w-3 h-3 text-[#9E7D4B]" />
                           </div>

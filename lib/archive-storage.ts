@@ -1,6 +1,12 @@
 "use client";
 
+import type { InvitationConfig } from "./date-content";
+import type { ReplyPayload } from "./invite-codec";
+
+export type AnswerLabels = Record<string, { title: string; options?: Record<string, string> }>;
+
 export interface SavedInvitationRecord {
+  /** Invite key: the short-link id, or the local key embedded in a #c= link. */
   id: string;
   guestName: string;
   senderName: string;
@@ -9,8 +15,11 @@ export interface SavedInvitationRecord {
   createdAt: string;
   answers?: Record<string, string | string[]> | null;
   updatedAt?: string | null;
+  /** Question and option titles, so answers can be shown without the invite config. */
+  labels?: AnswerLabels;
 }
 
+// The archive lives only in this browser; answers arrive through /reply links.
 const STORAGE_KEY = "cuochennho_saved_invitations";
 
 export function getSavedInvitations(): SavedInvitationRecord[] {
@@ -26,91 +35,74 @@ export function getSavedInvitations(): SavedInvitationRecord[] {
   }
 }
 
+function writeAll(list: SavedInvitationRecord[]): void {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+  } catch (e) {
+    console.error("Error saving invitations:", e);
+  }
+}
+
 export function saveInvitationRecord(record: SavedInvitationRecord): void {
   if (typeof window === "undefined") return;
-  try {
-    const list = getSavedInvitations();
-    const existingIndex = list.findIndex((item) => item.id === record.id);
-    let updatedList: SavedInvitationRecord[];
-    if (existingIndex >= 0) {
-      updatedList = [...list];
-      updatedList[existingIndex] = {
-        ...updatedList[existingIndex],
-        ...record,
-      };
-    } else {
-      updatedList = [record, ...list];
-    }
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedList));
-  } catch (e) {
-    console.error("Error saving invitation record:", e);
+  const list = getSavedInvitations();
+  const existingIndex = list.findIndex((item) => item.id === record.id);
+  if (existingIndex >= 0) {
+    const updatedList = [...list];
+    updatedList[existingIndex] = { ...updatedList[existingIndex], ...record };
+    writeAll(updatedList);
+  } else {
+    writeAll([record, ...list]);
   }
 }
 
 export function removeSavedInvitation(id: string): void {
   if (typeof window === "undefined") return;
-  try {
-    const list = getSavedInvitations();
-    const updatedList = list.filter((item) => item.id !== id);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedList));
-  } catch (e) {
-    console.error("Error removing saved invitation:", e);
-  }
+  writeAll(getSavedInvitations().filter((item) => item.id !== id));
 }
 
-export async function syncInvitationsWithServer(): Promise<SavedInvitationRecord[]> {
-  const localList = getSavedInvitations();
-  if (localList.length === 0) return [];
-
-  const ids = localList.map((item) => item.id).filter(Boolean);
-  if (ids.length === 0) return localList;
-
-  try {
-    const res = await fetch(`/api/invitations?ids=${encodeURIComponent(ids.join(","))}`);
-    if (!res.ok) return localList;
-    const data = await res.json();
-    if (!data.success || !Array.isArray(data.invitations)) return localList;
-
-    const serverMap = new Map<
-      string,
-      {
-        config: { guestName?: string; senderName?: string; eventDate?: string };
-        answers: Record<string, string | string[]> | null;
-        createdAt: string;
-        updatedAt: string;
-      }
-    >();
-
-    data.invitations.forEach(
-      (inv: {
-        id: string;
-        config: { guestName?: string; senderName?: string; eventDate?: string };
-        answers: Record<string, string | string[]> | null;
-        createdAt: string;
-        updatedAt: string;
-      }) => {
-        serverMap.set(inv.id, inv);
-      }
-    );
-
-    const mergedList = localList.map((local) => {
-      const remote = serverMap.get(local.id);
-      if (!remote) return local;
-
-      return {
-        ...local,
-        guestName: remote.config?.guestName || local.guestName,
-        senderName: remote.config?.senderName || local.senderName,
-        eventDate: remote.config?.eventDate || local.eventDate,
-        answers: remote.answers || local.answers || null,
-        updatedAt: remote.updatedAt || local.updatedAt,
-      };
-    });
-
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(mergedList));
-    return mergedList;
-  } catch (err) {
-    console.error("Failed to sync invitations with server:", err);
-    return localList;
+export function buildAnswerLabels(config: InvitationConfig): AnswerLabels {
+  const labels: AnswerLabels = {};
+  for (const q of config.questions) {
+    labels[q.id] = {
+      title: q.title,
+      options: q.options
+        ? Object.fromEntries(q.options.map((o) => [o.id || o.title, o.title]))
+        : undefined,
+    };
   }
+  return labels;
+}
+
+/** Display text for one answer, using stored labels when the archive has them. */
+export function formatAnswer(
+  value: string | string[],
+  label?: AnswerLabels[string]
+): string {
+  const values = Array.isArray(value) ? value : [value];
+  return values.map((v) => label?.options?.[v] ?? v).join(", ");
+}
+
+/**
+ * Stores answers from a reply link. Matches the sender's own record by invite key;
+ * when this browser never created that invite, keeps the answers as a new record.
+ */
+export function applyReply(reply: ReplyPayload): { record: SavedInvitationRecord; matched: boolean } {
+  const now = new Date().toISOString();
+  const existing = reply.key ? getSavedInvitations().find((item) => item.id === reply.key) : undefined;
+
+  const record: SavedInvitationRecord = existing
+    ? { ...existing, answers: reply.answers, updatedAt: now }
+    : {
+        id: reply.key || `reply-${Date.now()}`,
+        guestName: reply.guestName,
+        senderName: "",
+        shareUrl: "",
+        createdAt: now,
+        answers: reply.answers,
+        updatedAt: now,
+      };
+
+  saveInvitationRecord(record);
+  return { record, matched: !!existing };
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import { AnimatePresence } from "framer-motion";
 import { ScreenCover } from "@/components/ScreenCover";
@@ -13,6 +13,7 @@ import {
   defaultInvitationConfigEn,
 } from "@/lib/date-content";
 import { decodeConfigFromUrl } from "@/lib/config-encoder";
+import { sanitizeInviteConfig } from "@/lib/invite-sanitize";
 import { getThemeById } from "@/lib/theme-config";
 
 interface MainWizardProps {
@@ -30,7 +31,6 @@ export function MainWizard({
   invitationId,
 }: MainWizardProps) {
   const searchParams = useSearchParams();
-  const effectiveInvitationId = invitationId || searchParams.get("id") || undefined;
 
   // Determine active configuration: prop customConfig > URL encoded ?c=... > defaults
   const config = useMemo<InvitationConfig>(() => {
@@ -40,7 +40,7 @@ export function MainWizard({
 
     const encodedParam = searchParams.get("c");
     if (encodedParam) {
-      const decoded = decodeConfigFromUrl(encodedParam);
+      const decoded = sanitizeInviteConfig(decodeConfigFromUrl(encodedParam));
       if (decoded) return decoded;
     }
 
@@ -88,20 +88,6 @@ export function MainWizard({
       [questionId]: val,
     }));
   };
-
-  // Auto-sync answers to database when reaching confirmed ticket
-  useEffect(() => {
-    if (currentStep === totalQuestions + 2 && effectiveInvitationId) {
-      fetch("/api/invitations", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          id: effectiveInvitationId,
-          answers,
-        }),
-      }).catch((err) => console.error("Error auto-recording answers:", err));
-    }
-  }, [currentStep, totalQuestions, effectiveInvitationId, answers]);
 
   const isAtQuestion = currentStep >= 2 && currentStep <= totalQuestions + 1;
   const currentQuestionIndex = currentStep - 2;
@@ -222,7 +208,7 @@ export function MainWizard({
               theme={activeTheme}
               answers={answers}
               onBack={() => setCurrentStep(totalQuestions + 1)}
-              invitationId={effectiveInvitationId}
+              invitationId={invitationId}
             />
           )}
         </AnimatePresence>
