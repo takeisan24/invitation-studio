@@ -88,6 +88,7 @@ export interface Translations {
     tabQuestions: string;
     tabTicket: string;
     btnGetLink: (name: string) => string;
+    btnGetLinkShort: string;
     recTip: string;
     addQuestion: string;
     modalTitle: string;
@@ -254,9 +255,9 @@ export const DICTIONARY: Record<Language, Translations> = {
       ctaDemo: "Xem thiệp mẫu (Live Demo) ↗",
       demoHint: "✦ Chạm vào vé để trải nghiệm thiệp mẫu ↗",
       navStudio: "Vào Studio",
-      feature1Title: "Riêng Tư & Kín Đáo Tuyệt Đối",
+      feature1Title: "Riêng Tư & Kín Đáo",
       feature1Desc:
-        "Không cần đăng ký tài khoản, không lưu thông tin cá nhân. Bức thiệp chỉ thuộc về riêng hai bạn qua một đường link gửi kín đáo.",
+        "Không cần tài khoản. Câu trả lời của người nhận không lưu trên máy chủ, chỉ về tay bạn qua link họ chọn gửi. Thiệp được lưu tối đa 180 ngày rồi tự xoá.",
       feature2Title: "Hỏi Han Chu Đáo, Không Gượng Gạo",
       feature2Desc:
         "Gợi ý chọn giờ hẹn, gu ăn uống, món cần né hoặc vài dòng tâm sự ngắn. Tự nhiên như một cuộc trò chuyện ấm cúng.",
@@ -309,19 +310,20 @@ export const DICTIONARY: Record<Language, Translations> = {
         "Chiếc vé hẹn Vintage Boarding Pass kèm con dấu sáp và thông điệp: 'Lịch trình đã xác nhận. Mọi khâu sắp xếp còn lại, để mình lo'. Bạn nam gánh vác phần tổ chức để nàng chỉ việc tận hưởng.",
       tipsTitle: "Lời khuyên vàng về Bộ câu hỏi",
       tipsDesc:
-        "Khuyên dùng từ 2 đến 4 câu hỏi ngắn gọn. Tránh hỏi dồn dập khiến đối phương cảm thấy như đang làm khảo sát xin việc.",
+        "Khuyên dùng từ 3 đến 5 câu hỏi ngắn gọn. Tránh hỏi dồn dập khiến đối phương cảm thấy như đang làm khảo sát xin việc.",
       ctaReady: "Tôi đã hiểu, vào Studio tạo thiệp ngay",
       skip: "Bỏ qua hướng dẫn",
     },
     studio: {
-      title: "Invitation Studio",
+      title: "Cuộc Hẹn Nhỏ",
       subtitle: "Tùy biến thiệp hẹn hò độc bản",
       tabTheme: "Giao diện",
       tabCouple: "Bìa & Lời ngỏ",
       tabQuestions: "Bộ câu hỏi",
       tabTicket: "Tấm vé & Kết",
       btnGetLink: (name: string) => `Lấy link gửi ${name || "người ấy"} 💌`,
-      recTip: "Khuyên dùng từ 2 đến 4 câu hỏi để giữ trải nghiệm buổi hẹn đầu nhẹ nhàng nhất.",
+      btnGetLinkShort: "Lấy link",
+      recTip: "Khuyên dùng từ 3 đến 5 câu hỏi để giữ trải nghiệm buổi hẹn đầu nhẹ nhàng nhất.",
       addQuestion: "+ Thêm câu hỏi",
       modalTitle: "Tấm vé đã sẵn sàng gửi",
       modalDesc:
@@ -491,9 +493,9 @@ export const DICTIONARY: Record<Language, Translations> = {
       ctaDemo: "Explore Live Demo ↗",
       demoHint: "✦ Tap pass to experience live invitation ↗",
       navStudio: "Enter Studio",
-      feature1Title: "100% Private & Discrete",
+      feature1Title: "Private & Discreet",
       feature1Desc:
-        "No sign-up or accounts required. No personal data is stored on external servers. Your invitation stays strictly between the two of you.",
+        "No account needed. The recipient's answers are never stored on a server; they reach you only through the link they choose to send. Invitations are kept for up to 180 days, then deleted.",
       feature2Title: "Warm & Effortless Inquiries",
       feature2Desc:
         "Suggest meeting times, beverage tastes, dietary preferences, or a secret note. Natural and completely unpressured.",
@@ -546,19 +548,20 @@ export const DICTIONARY: Record<Language, Translations> = {
         "A vintage boarding pass with a personalized wax seal: 'Itinerary confirmed. Leave the rest to me.' Taking full ownership of logistics allows your date to simply relax.",
       tipsTitle: "Golden Question Rule",
       tipsDesc:
-        "We recommend 2 to 4 concise questions. Avoid making it feel like an employment questionnaire.",
+        "We recommend 3 to 5 concise questions. Avoid making it feel like an employment questionnaire.",
       ctaReady: "Got it, Enter the Studio Now",
       skip: "Skip to Studio",
     },
     studio: {
-      title: "Invitation Studio",
+      title: "Cuộc Hẹn Nhỏ",
       subtitle: "Craft your bespoke vintage invitation",
       tabTheme: "Theme",
       tabCouple: "Cover & Names",
       tabQuestions: "Questions",
       tabTicket: "Ticket Pass",
       btnGetLink: (name: string) => `Get Link for ${name || "Date"} 💌`,
-      recTip: "We recommend 2 to 4 questions to keep the first date experience lighthearted.",
+      btnGetLinkShort: "Get link",
+      recTip: "We recommend 3 to 5 questions to keep the first date experience lighthearted.",
       addQuestion: "+ Add Question",
       modalTitle: "Your Invitation Pass is Ready",
       modalDesc:

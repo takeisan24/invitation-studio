@@ -32,11 +32,11 @@ export default function ReplyPage() {
       </div>
     );
   }
-  if (!reply) return <InviteNotFound />;
+  if (!reply) return <InviteNotFound variant="reply" />;
 
   const isEn = reply.language === "en";
   const labels = saved?.record.labels;
-  const entries = Object.entries(reply.answers).filter(
+  const entries = Object.entries(saved?.record.answers ?? reply.answers).filter(
     ([, v]) => v && !(Array.isArray(v) && v.length === 0)
   );
 

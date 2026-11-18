@@ -1,5 +1,5 @@
 import LZString from "lz-string";
-import type { InvitationConfig } from "./date-content";
+import type { InvitationConfig, QuestionBlock } from "./date-content";
 import { BASELINE_V1 } from "./invite-baseline";
 import { sanitizeInviteConfig } from "./invite-sanitize";
 
@@ -14,7 +14,9 @@ import { sanitizeInviteConfig } from "./invite-sanitize";
  */
 
 export const INVITE_PAYLOAD_VERSION = 1;
-export const REPLY_PAYLOAD_VERSION = 1;
+// v1: answers carry option ids/titles. v2: choice answers are option indexes (numbers),
+// which keeps the link short; readers accept both so links already sent still open.
+export const REPLY_PAYLOAD_VERSION = 2;
 
 type Json = null | boolean | number | string | Json[] | { [key: string]: Json };
 type Answers = Record<string, string | string[]>;
@@ -112,31 +114,92 @@ export function decodeInvite(encoded: string): { config: InvitationConfig; key: 
   return { config, key };
 }
 
+/** One answer slot of a v2 reply, aligned with the invite's questions: option indexes or text. */
+export type ReplyCell = string | string[] | number | number[] | null;
+
 export interface ReplyPayload {
   /** Invite key the answers belong to (short-link id or local key). */
   key: string;
   language: "vi" | "en";
   guestName: string;
+  /** Answers by question id (v1 links, and the input to encodeReply). */
   answers: Answers;
+  /** v2 links: one cell per question, in question order. Resolved to labels by the reader. */
+  cells?: ReplyCell[];
+  /** v2 links: fingerprint of the sender's questions, to know if default labels apply. */
+  fingerprint?: string;
 }
 
-export function encodeReply(reply: ReplyPayload): string {
-  return pack({
-    v: REPLY_PAYLOAD_VERSION,
-    k: reply.key,
-    l: reply.language,
-    g: reply.guestName,
-    a: reply.answers,
+/** Short stable hash of question/option ids and titles (FNV-1a, base 36). */
+export function questionsFingerprint(questions: QuestionBlock[]): string {
+  const text = questions
+    .map((q) => `${q.id}|${q.type}|${(q.options ?? []).map((o) => `${o.id}:${o.title}`).join(",")}`)
+    .join(";");
+  let h = 0x811c9dc5;
+  for (let i = 0; i < text.length; i++) {
+    h ^= text.charCodeAt(i);
+    h = Math.imul(h, 0x01000193) >>> 0;
+  }
+  return h.toString(36);
+}
+
+/**
+ * Encodes a reply. With `questions` (v2) each answer becomes one positional cell and choices
+ * become option indexes, which keeps the link short; without, the v1 id-keyed form is used.
+ */
+export function encodeReply(reply: ReplyPayload, questions?: QuestionBlock[]): string {
+  const head = { k: reply.key, l: reply.language, g: reply.guestName };
+  if (!questions) return pack({ v: 1, ...head, a: reply.answers });
+
+  const cells: ReplyCell[] = questions.map((q) => {
+    const value = reply.answers[q.id];
+    if (value === undefined || (Array.isArray(value) && value.length === 0) || value === "") return null;
+    if (q.options?.length) {
+      const values = Array.isArray(value) ? value : [value];
+      const idx = values.map((v) => q.options!.findIndex((o) => o.id === v || o.title === v));
+      if (idx.every((i) => i >= 0)) return Array.isArray(value) ? idx : idx[0];
+    }
+    return value;
   });
+  while (cells.length > 0 && cells[cells.length - 1] === null) cells.pop();
+  return pack({ v: REPLY_PAYLOAD_VERSION, ...head, a: cells, f: questionsFingerprint(questions) });
 }
 
 const MAX_ANSWERS = 30;
 const MAX_ANSWER_LENGTH = 2000;
 
+function cleanCell(value: unknown): ReplyCell {
+  if (typeof value === "number") return Number.isInteger(value) && value >= 0 && value < 100 ? value : null;
+  if (typeof value === "string") return value.slice(0, MAX_ANSWER_LENGTH);
+  if (Array.isArray(value)) {
+    const nums = value.filter((v): v is number => typeof v === "number" && Number.isInteger(v) && v >= 0 && v < 100);
+    if (nums.length > 0 && nums.length === value.length) return nums.slice(0, MAX_ANSWERS);
+    const strs = value.filter((v): v is string => typeof v === "string");
+    if (strs.length > 0) return strs.slice(0, MAX_ANSWERS).map((v) => v.slice(0, MAX_ANSWER_LENGTH));
+  }
+  return null;
+}
+
 export function decodeReply(encoded: string): ReplyPayload | null {
   const payload = unpack(encoded);
-  if (!isObject(payload) || payload.v !== REPLY_PAYLOAD_VERSION || !isObject(payload.a)) return null;
+  if (!isObject(payload)) return null;
 
+  const base = {
+    key: typeof payload.k === "string" ? payload.k.slice(0, 40) : "",
+    language: payload.l === "en" ? ("en" as const) : ("vi" as const),
+    guestName: typeof payload.g === "string" ? payload.g.slice(0, 80) : "",
+  };
+
+  if (payload.v === 2 && Array.isArray(payload.a)) {
+    return {
+      ...base,
+      answers: {},
+      cells: payload.a.slice(0, MAX_ANSWERS).map(cleanCell),
+      ...(typeof payload.f === "string" ? { fingerprint: payload.f.slice(0, 12) } : {}),
+    };
+  }
+
+  if (payload.v !== 1 || !isObject(payload.a)) return null;
   const answers: Answers = {};
   for (const [id, value] of Object.entries(payload.a).slice(0, MAX_ANSWERS)) {
     if (typeof value === "string") {
@@ -148,13 +211,7 @@ export function decodeReply(encoded: string): ReplyPayload | null {
         .map((v) => v.slice(0, MAX_ANSWER_LENGTH));
     }
   }
-
-  return {
-    key: typeof payload.k === "string" ? payload.k.slice(0, 40) : "",
-    language: payload.l === "en" ? "en" : "vi",
-    guestName: typeof payload.g === "string" ? payload.g.slice(0, 80) : "",
-    answers,
-  };
+  return { ...base, answers };
 }
 
 /**

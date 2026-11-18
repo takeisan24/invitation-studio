@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   X,
@@ -24,6 +24,7 @@ import {
 } from "@/lib/archive-storage";
 import { formatEventDate } from "@/lib/date-content";
 import { soundEngine } from "@/lib/audio";
+import { useDialog } from "@/lib/use-dialog";
 
 interface ArchiveDrawerProps {
   isOpen: boolean;
@@ -65,6 +66,11 @@ export function ArchiveDrawer({
 
   const isEn = lang === "en";
 
+  const drawerRef = useRef<HTMLDivElement>(null);
+  const detailRef = useRef<HTMLDivElement>(null);
+  useDialog(isOpen, onClose, drawerRef);
+  useDialog(!!selectedItem, () => setSelectedItem(null), detailRef);
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -85,6 +91,11 @@ export function ArchiveDrawer({
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
             transition={{ type: "spring", damping: 28, stiffness: 280 }}
+            ref={drawerRef}
+            tabIndex={-1}
+            role="dialog"
+            aria-modal="true"
+            aria-label={isEn ? "Archive" : "Hộp thư"}
             className="relative z-10 w-full max-w-md bg-[#FAF8F5] border-l border-stone-300 shadow-2xl flex flex-col h-full"
           >
             {/* Header */}
@@ -108,6 +119,7 @@ export function ArchiveDrawer({
                 <button
                   type="button"
                   onClick={onClose}
+                  aria-label={isEn ? "Close" : "Đóng"}
                   className="p-2 rounded-lg text-stone-500 hover:text-stone-900 hover:bg-stone-100 transition-all cursor-pointer"
                 >
                   <X className="w-4 h-4" />
@@ -291,6 +303,11 @@ export function ArchiveDrawer({
                   initial={{ opacity: 0, scale: 0.95, y: 10 }}
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                  ref={detailRef}
+                  tabIndex={-1}
+                  role="dialog"
+                  aria-modal="true"
+                  aria-label={isEn ? "Response details" : "Chi tiết hồi âm"}
                   className="relative z-10 w-full max-w-md bg-[#FAF8F5] border border-stone-300 rounded-2xl shadow-2xl overflow-hidden p-6 text-left max-h-[85vh] flex flex-col"
                 >
                   <div className="flex items-start justify-between pb-4 border-b border-stone-200">
@@ -310,6 +327,7 @@ export function ArchiveDrawer({
                     <button
                       type="button"
                       onClick={() => setSelectedItem(null)}
+                      aria-label={isEn ? "Close" : "Đóng"}
                       className="p-1 rounded-full text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition-colors cursor-pointer"
                     >
                       <X className="w-4 h-4" />

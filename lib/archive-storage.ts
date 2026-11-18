@@ -1,9 +1,13 @@
 "use client";
 
 import type { InvitationConfig } from "./date-content";
-import type { ReplyPayload } from "./invite-codec";
+import { questionsFingerprint, type ReplyPayload } from "./invite-codec";
+import { BASELINE_V1 } from "./invite-baseline";
 
-export type AnswerLabels = Record<string, { title: string; options?: Record<string, string> }>;
+export type AnswerLabels = Record<
+  string,
+  { title: string; options?: Record<string, string>; /** option ids in display order */ optionIds?: string[] }
+>;
 
 export interface SavedInvitationRecord {
   /** Invite key: the short-link id, or the local key embedded in a #c= link. */
@@ -66,6 +70,7 @@ export function buildAnswerLabels(config: InvitationConfig): AnswerLabels {
   for (const q of config.questions) {
     labels[q.id] = {
       title: q.title,
+      optionIds: q.options?.map((o) => o.id || o.title),
       options: q.options
         ? Object.fromEntries(q.options.map((o) => [o.id || o.title, o.title]))
         : undefined,
@@ -87,19 +92,58 @@ export function formatAnswer(
  * Stores answers from a reply link. Matches the sender's own record by invite key;
  * when this browser never created that invite, keeps the answers as a new record.
  */
+/**
+ * Turns a reply into answers keyed by question id. v2 links carry positional cells and option
+ * indexes, resolved with the sender's saved labels, else the default questions (only when the
+ * sender kept them). Whatever cannot be resolved shows as "Phương án N".
+ */
+export function resolveReplyAnswers(
+  reply: ReplyPayload,
+  savedLabels?: AnswerLabels
+): { answers: Record<string, string | string[]>; labels: AnswerLabels } {
+  const defaults = BASELINE_V1[reply.language].questions;
+  const useDefaults = !reply.fingerprint || reply.fingerprint === questionsFingerprint(defaults);
+  const labels: AnswerLabels = {
+    ...(useDefaults ? buildAnswerLabels(BASELINE_V1[reply.language]) : {}),
+    ...savedLabels,
+  };
+  const answers: Record<string, string | string[]> = { ...reply.answers };
+  if (!reply.cells) return { answers, labels };
+
+  const prefix = reply.language === "en" ? "Option" : "Phương án";
+  const order = Object.keys(savedLabels ?? (useDefaults ? labels : {}));
+  reply.cells.forEach((cell, i) => {
+    if (cell === null) return;
+    const qid = order[i] ?? `q${i + 1}`;
+    if (typeof cell === "string" || (Array.isArray(cell) && typeof cell[0] === "string")) {
+      answers[qid] = cell as string | string[];
+      return;
+    }
+    const label = labels[qid];
+    const ids = label?.optionIds ?? (label?.options ? Object.keys(label.options) : []);
+    const picked = (Array.isArray(cell) ? (cell as number[]) : [cell as number]).map(
+      (n) => ids[n] ?? `${prefix} ${n + 1}`
+    );
+    answers[qid] = picked.length === 1 ? picked[0] : picked;
+  });
+  return { answers, labels };
+}
+
 export function applyReply(reply: ReplyPayload): { record: SavedInvitationRecord; matched: boolean } {
   const now = new Date().toISOString();
   const existing = reply.key ? getSavedInvitations().find((item) => item.id === reply.key) : undefined;
+  const { answers, labels } = resolveReplyAnswers(reply, existing?.labels);
 
   const record: SavedInvitationRecord = existing
-    ? { ...existing, answers: reply.answers, updatedAt: now }
+    ? { ...existing, answers, labels, updatedAt: now }
     : {
         id: reply.key || `reply-${Date.now()}`,
         guestName: reply.guestName,
         senderName: "",
         shareUrl: "",
         createdAt: now,
-        answers: reply.answers,
+        answers,
+        labels,
         updatedAt: now,
       };
 

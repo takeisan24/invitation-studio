@@ -14,7 +14,8 @@ import {
 import { domToPng } from "modern-screenshot";
 import { WaxSeal } from "@/components/WaxSeal";
 import { soundEngine } from "@/lib/audio";
-import { InvitationConfig, formatEventDate, extractTimeFromAnswers } from "@/lib/date-content";
+import { useDialog } from "@/lib/use-dialog";
+import { InvitationConfig, answerLabel, formatEventDate, extractTimeFromAnswers } from "@/lib/date-content";
 import { ThemePreset } from "@/lib/theme-config";
 
 interface StoryCardModalProps {
@@ -40,7 +41,7 @@ export function StoryCardModal({
   const [feedback, setFeedback] = useState<string | null>(null);
 
   const isEn = config.language === "en";
-  const eventTimeStr = extractTimeFromAnswers(answers);
+  const eventTimeStr = extractTimeFromAnswers(answers, config.questions);
 
   const displayGuestName = isPrivacyMode
     ? config.guestName[0]?.toUpperCase() || "L"
@@ -90,6 +91,9 @@ export function StoryCardModal({
     }
   };
 
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useDialog(isOpen, onClose, dialogRef);
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -109,6 +113,11 @@ export function StoryCardModal({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.94, y: 15 }}
             transition={{ type: "spring", damping: 26, stiffness: 300 }}
+            ref={dialogRef}
+            tabIndex={-1}
+            role="dialog"
+            aria-modal="true"
+            aria-label={config.language === "en" ? "Story card" : "Ảnh story"}
             className="relative z-10 w-full max-w-lg bg-[#FAF8F5] border border-stone-300 rounded-2xl shadow-2xl p-4 sm:p-6 flex flex-col items-center my-auto max-h-[96vh] overflow-y-auto"
           >
             {/* Top Toolbar */}
@@ -124,6 +133,7 @@ export function StoryCardModal({
               <button
                 type="button"
                 onClick={onClose}
+                aria-label={config.language === "en" ? "Close" : "Đóng"}
                 className="p-1 rounded-full text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition-colors cursor-pointer"
               >
                 <X className="w-4 h-4" />
@@ -290,7 +300,9 @@ export function StoryCardModal({
                               style={{ color: theme.palette.charcoal }}
                               className="font-medium text-[11px] block leading-snug truncate"
                             >
-                              {Array.isArray(raw) ? raw.join(", ") : raw}
+                              {Array.isArray(raw)
+                                ? raw.map((v) => answerLabel(q, v)).join(", ")
+                                : answerLabel(q, raw)}
                             </span>
                           )}
                         </div>

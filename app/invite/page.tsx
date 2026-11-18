@@ -6,6 +6,8 @@ import { Sparkles } from "lucide-react";
 import { MainWizard } from "@/components/MainWizard";
 import { InviteNotFound } from "@/components/InviteNotFound";
 import { decodeInvite, readHashParam } from "@/lib/invite-codec";
+import { decodeConfigFromUrl } from "@/lib/config-encoder";
+import { sanitizeInviteConfig } from "@/lib/invite-sanitize";
 import { useLocationHash } from "@/lib/use-location-hash";
 
 function OpeningLetter({ label }: { label: string }) {
@@ -16,7 +18,7 @@ function OpeningLetter({ label }: { label: string }) {
       </div>
       <p className="font-serif italic text-lg text-stone-800 mb-1">{label}</p>
       <span className="font-mono text-[11px] text-stone-500 uppercase tracking-widest">
-        Vintage Invitation Studio
+        Cuộc Hẹn Nhỏ
       </span>
     </div>
   );
@@ -33,6 +35,12 @@ function RecipientInvitationContent() {
   const legacyEncoded = searchParams.get("c");
   const legacyId = searchParams.get("id");
 
+  // A damaged ?c= must not silently open the default invitation as if it were real.
+  const legacyValid = useMemo(
+    () => (legacyEncoded ? sanitizeInviteConfig(decodeConfigFromUrl(legacyEncoded)) !== null : true),
+    [legacyEncoded]
+  );
+
   const fromHash = useMemo(() => {
     const encoded = hash ? readHashParam(hash, "c") : null;
     return encoded ? decodeInvite(encoded) : null;
@@ -46,7 +54,7 @@ function RecipientInvitationContent() {
   }, [legacyId, shouldRedirectHome, router]);
 
   if (legacyId) return <OpeningLetter label="Đang mở bức thư riêng tư..." />;
-  if (legacyEncoded) return <MainWizard isRecipientPureView />;
+  if (legacyEncoded) return legacyValid ? <MainWizard isRecipientPureView /> : <InviteNotFound />;
   if (hash === null || shouldRedirectHome) return <OpeningLetter label="Đang mở bức thư..." />;
   if (!fromHash) return <InviteNotFound />;
 

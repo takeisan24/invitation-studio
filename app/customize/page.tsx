@@ -57,6 +57,7 @@ import { AUDIO_MAX_BYTES, UploadError, uploadAsset } from "@/lib/upload-client";
 import { useSearchParams } from "next/navigation";
 import { DICTIONARY, Language } from "@/lib/i18n";
 import { soundEngine } from "@/lib/audio";
+import { useDialog } from "@/lib/use-dialog";
 import { ArchiveDrawer } from "@/components/ArchiveDrawer";
 import { buildAnswerLabels, saveInvitationRecord } from "@/lib/archive-storage";
 
@@ -69,6 +70,8 @@ function CustomizeContent() {
   const [isArchiveOpen, setIsArchiveOpen] = useState(() => searchParams.get("archive") === "1");
   const [activeTab, setActiveTab] = useState<"theme" | "couple" | "questions" | "ticket">("theme");
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const shareDialogRef = useRef<HTMLDivElement>(null);
+  useDialog(isShareModalOpen, () => setIsShareModalOpen(false), shareDialogRef);
   const [isGeneratingShare, setIsGeneratingShare] = useState(false);
   const [shareUrl, setShareUrl] = useState("");
   const [qrCodeUrl, setQrCodeUrl] = useState("");
@@ -260,8 +263,13 @@ function CustomizeContent() {
         } else {
           previewAudioRef.current.src = config.music.url;
         }
-        previewAudioRef.current.play().catch(() => {});
-        setIsMusicPlaying(true);
+        previewAudioRef.current
+          .play()
+          .then(() => setIsMusicPlaying(true))
+          .catch(() => {
+            setIsMusicPlaying(false);
+            showToast(lang === "vi" ? "Không phát được bài này" : "This track can't be played");
+          });
       }
     } else {
       // Offline Lo-Fi synthesizer engine
@@ -312,8 +320,11 @@ function CustomizeContent() {
       previewAudioRef.current.onended = () => {
         setPreviewingTrackId(null);
       };
-      previewAudioRef.current.play().catch(() => {});
       setPreviewingTrackId(trackId);
+      previewAudioRef.current.play().catch(() => {
+        setPreviewingTrackId(null);
+        showToast(lang === "vi" ? "Không phát được bài này" : "This track can't be played");
+      });
     }
   };
 
@@ -668,18 +679,18 @@ function CustomizeContent() {
   return (
     <div className="min-h-screen bg-[#F4F1EA] text-stone-900 flex flex-col font-sans">
       {/* Studio Header */}
-      <header className="sticky top-0 z-40 bg-[#FAF8F5]/95 border-b border-stone-200 backdrop-blur-md px-4 sm:px-8 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-3">
+      <header className="sticky top-0 z-40 bg-[#FAF8F5]/95 border-b border-stone-200 backdrop-blur-md px-3 sm:px-8 py-3 flex items-center justify-between">
+        <div className="flex items-center gap-3 min-w-0">
           <Link
             href="/"
             onClick={() => soundEngine.playPaperBack()}
             title={lang === "en" ? "Return to Home" : "Về Trang chủ"}
-            className="w-8 h-8 rounded-full bg-stone-900 text-[#F9F6F0] flex items-center justify-center font-serif italic text-base hover:bg-stone-700 transition-colors cursor-pointer"
+            className="w-11 h-11 sm:w-8 sm:h-8 flex-shrink-0 rounded-full bg-stone-900 text-[#F9F6F0] flex items-center justify-center font-serif italic text-base hover:bg-stone-700 transition-colors cursor-pointer"
           >
             ✦
           </Link>
-          <div>
-            <h1 className="font-serif italic font-medium text-lg text-stone-900 leading-tight">
+          <div className="sr-only sm:not-sr-only min-w-0">
+            <h1 className="font-serif italic font-medium text-lg text-stone-900 leading-tight whitespace-nowrap">
               {t.studio.title}
             </h1>
             <p className="text-[10px] font-mono uppercase tracking-widest text-stone-500">
@@ -689,12 +700,12 @@ function CustomizeContent() {
         </div>
 
         {/* Header Right Actions */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
           {/* Music Control embedded in Header (No overlap with buttons!) */}
           <button
             onClick={handleToggleMusic}
             type="button"
-            className={`p-2 rounded-full border transition-all ${
+            className={`w-11 h-11 sm:w-auto sm:h-auto inline-flex items-center justify-center sm:p-2 rounded-full border transition-all ${
               isMusicPlaying
                 ? "bg-[#9E7D4B] text-white border-[#9E7D4B] shadow-xs"
                 : "bg-white/80 border-stone-300 text-stone-700 hover:border-stone-800"
@@ -708,7 +719,7 @@ function CustomizeContent() {
           <button
             onClick={handleToggleLang}
             type="button"
-            className="flex items-center gap-1 px-2.5 py-1.5 rounded-full border border-stone-300 text-xs font-mono uppercase text-stone-700 hover:border-stone-800 bg-white/80"
+            className="flex items-center justify-center gap-1 min-h-[44px] sm:min-h-0 px-2.5 py-1.5 rounded-full border border-stone-300 text-xs font-mono uppercase text-stone-700 hover:border-stone-800 bg-white/80"
           >
             <Globe className="w-3 h-3 text-[#9E7D4B]" />
             <span>{lang.toUpperCase()}</span>
@@ -735,7 +746,7 @@ function CustomizeContent() {
               setIsArchiveOpen(true);
             }}
             type="button"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-stone-300 text-xs font-mono uppercase tracking-wider text-stone-700 hover:text-stone-900 hover:border-stone-800 bg-white/80 transition-all cursor-pointer shadow-2xs"
+            className="flex items-center justify-center gap-1.5 min-w-[44px] min-h-[44px] sm:min-h-0 px-3 py-1.5 rounded-full border border-stone-300 text-xs font-mono uppercase tracking-wider text-stone-700 hover:text-stone-900 hover:border-stone-800 bg-white/80 transition-all cursor-pointer shadow-2xs"
             title={lang === "vi" ? "Hộp thư thiệp đã lưu & phản hồi" : "Saved invitations & responses"}
           >
             <Inbox className="w-3.5 h-3.5 text-[#9E7D4B]" />
@@ -749,14 +760,19 @@ function CustomizeContent() {
             onClick={handleOpenShareModal}
             disabled={isGeneratingShare}
             type="button"
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-stone-900 text-[#F9F6F0] text-xs font-sans uppercase tracking-widest font-medium hover:bg-stone-800 transition-all active:scale-[0.98] shadow-sm disabled:opacity-75 disabled:cursor-not-allowed"
+            className="inline-flex items-center justify-center gap-2 whitespace-nowrap flex-shrink-0 min-h-[44px] sm:min-h-0 px-3 sm:px-4 py-2 rounded-full bg-stone-900 text-[#F9F6F0] text-xs font-sans uppercase tracking-wider sm:tracking-widest font-medium hover:bg-stone-800 transition-all active:scale-[0.98] shadow-sm disabled:opacity-75 disabled:cursor-not-allowed"
           >
             {isGeneratingShare ? (
               <Loader2 className="w-3.5 h-3.5 animate-spin text-[#9E7D4B]" />
             ) : (
               <Sparkles className="w-3.5 h-3.5 text-[#9E7D4B]" />
             )}
-            <span>
+            <span className="sm:hidden">
+              {isGeneratingShare
+                ? (lang === "vi" ? "ĐANG TẠO…" : "CREATING…")
+                : t.studio.btnGetLinkShort}
+            </span>
+            <span className="hidden sm:inline">
               {isGeneratingShare
                 ? (lang === "vi" ? "ĐANG TẠO LINK..." : "CREATING...")
                 : t.studio.btnGetLink(config.guestName)}
@@ -770,7 +786,7 @@ function CustomizeContent() {
         <button
           onClick={() => setMobileView("editor")}
           type="button"
-          className={`flex-1 py-2.5 text-center text-xs font-mono uppercase tracking-wider flex items-center justify-center gap-2 border-b-2 transition-colors ${
+          className={`flex-1 min-h-[44px] py-2.5 text-center text-xs font-mono uppercase tracking-wider flex items-center justify-center gap-2 border-b-2 transition-colors ${
             mobileView === "editor"
               ? "border-stone-900 text-stone-900 font-bold"
               : "border-transparent text-stone-500"
@@ -782,7 +798,7 @@ function CustomizeContent() {
         <button
           onClick={() => setMobileView("preview")}
           type="button"
-          className={`flex-1 py-2.5 text-center text-xs font-mono uppercase tracking-wider flex items-center justify-center gap-2 border-b-2 transition-colors ${
+          className={`flex-1 min-h-[44px] py-2.5 text-center text-xs font-mono uppercase tracking-wider flex items-center justify-center gap-2 border-b-2 transition-colors ${
             mobileView === "preview"
               ? "border-stone-900 text-stone-900 font-bold"
               : "border-transparent text-stone-500"
@@ -794,10 +810,10 @@ function CustomizeContent() {
       </div>
 
       {/* Studio Workspace */}
-      <div className="flex-1 flex max-w-7xl mx-auto w-full p-4 lg:p-8 gap-8">
+      <main className="flex-1 flex max-w-7xl mx-auto w-full p-4 lg:p-8 gap-8">
         {/* LEFT COLUMN: Controls & Question Editor */}
         <div
-          className={`flex-1 flex flex-col bg-[#FAF8F5] border border-stone-300 rounded-2xl shadow-sm overflow-hidden h-[calc(100vh-100px)] min-h-[620px] ${
+          className={`flex-1 flex flex-col bg-[#FAF8F5] border border-stone-300 rounded-2xl shadow-sm overflow-hidden h-[calc(100dvh-100px)] lg:h-[calc(100dvh-9rem)] min-h-[620px] ${
             mobileView === "preview" ? "hidden lg:flex" : "flex"
           }`}
         >
@@ -845,7 +861,7 @@ function CustomizeContent() {
                         tabBodyRef.current?.scrollTo({ top: 0, behavior: "instant" });
                       }}
                       type="button"
-                      className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-mono uppercase tracking-wider whitespace-nowrap transition-all flex-shrink-0 ${
+                      className={`flex items-center gap-2 min-h-[44px] sm:min-h-0 px-3.5 py-2 rounded-lg text-xs font-mono uppercase tracking-wider whitespace-nowrap transition-all flex-shrink-0 ${
                         isActive
                           ? "bg-stone-900 text-[#F9F6F0] font-medium shadow-sm"
                           : "text-stone-600 hover:bg-stone-200/60"
@@ -1977,9 +1993,9 @@ function CustomizeContent() {
                     className="p-4 bg-white border border-stone-300 rounded-xl space-y-3 relative shadow-xs"
                   >
                     {/* Header of Block */}
-                    <div className="flex items-center justify-between border-b border-stone-200 pb-2">
-                      <div className="flex items-center gap-2">
-                        <span className="w-6 h-6 rounded-full bg-stone-900 text-white font-mono text-xs flex items-center justify-center font-bold">
+                    <div className="flex flex-wrap items-center justify-between gap-y-2 border-b border-stone-200 pb-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="w-6 h-6 flex-shrink-0 rounded-full bg-stone-900 text-white font-mono text-xs flex items-center justify-center font-bold">
                           {idx + 1}
                         </span>
                         <span className="text-[10px] font-mono uppercase tracking-wider text-[#9E7D4B] font-semibold">
@@ -1995,7 +2011,7 @@ function CustomizeContent() {
                           disabled={idx === 0}
                           onClick={() => handleMoveQuestion(idx, "up")}
                           type="button"
-                          className="w-7 h-7 rounded-md border border-stone-200 bg-white text-stone-500 hover:text-stone-900 hover:border-stone-400 hover:bg-stone-50 flex items-center justify-center transition-all shadow-2xs disabled:opacity-25 disabled:pointer-events-none active:scale-95"
+                          className="w-11 h-11 sm:w-7 sm:h-7 rounded-md border border-stone-200 bg-white text-stone-500 hover:text-stone-900 hover:border-stone-400 hover:bg-stone-50 flex items-center justify-center transition-all shadow-2xs disabled:opacity-25 disabled:pointer-events-none active:scale-95"
                           title={t.studio.moveUp}
                         >
                           <ArrowUp className="w-3.5 h-3.5" />
@@ -2004,7 +2020,7 @@ function CustomizeContent() {
                           disabled={idx === config.questions.length - 1}
                           onClick={() => handleMoveQuestion(idx, "down")}
                           type="button"
-                          className="w-7 h-7 rounded-md border border-stone-200 bg-white text-stone-500 hover:text-stone-900 hover:border-stone-400 hover:bg-stone-50 flex items-center justify-center transition-all shadow-2xs disabled:opacity-25 disabled:pointer-events-none active:scale-95"
+                          className="w-11 h-11 sm:w-7 sm:h-7 rounded-md border border-stone-200 bg-white text-stone-500 hover:text-stone-900 hover:border-stone-400 hover:bg-stone-50 flex items-center justify-center transition-all shadow-2xs disabled:opacity-25 disabled:pointer-events-none active:scale-95"
                           title={t.studio.moveDown}
                         >
                           <ArrowDown className="w-3.5 h-3.5" />
@@ -2012,7 +2028,7 @@ function CustomizeContent() {
                         <button
                           onClick={() => handleRemoveQuestion(q.id)}
                           type="button"
-                          className="w-7 h-7 rounded-md border border-stone-200 bg-white text-stone-400 hover:text-rose-600 hover:border-rose-300 hover:bg-rose-50 flex items-center justify-center transition-all shadow-2xs ml-0.5 active:scale-95"
+                          className="w-11 h-11 sm:w-7 sm:h-7 rounded-md border border-stone-200 bg-white text-stone-400 hover:text-rose-600 hover:border-rose-300 hover:bg-rose-50 flex items-center justify-center transition-all shadow-2xs ml-0.5 active:scale-95"
                           title={t.studio.deleteQuestion}
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -2062,7 +2078,7 @@ function CustomizeContent() {
                         </span>
                         <div className="space-y-2">
                           {q.options.map((opt) => (
-                            <div key={opt.id} className="flex items-center gap-2">
+                            <div key={opt.id} className="flex flex-wrap sm:flex-nowrap items-center gap-2">
                               {q.type === "course_card" && (
                                 <input
                                   type="text"
@@ -2084,7 +2100,7 @@ function CustomizeContent() {
                                     }));
                                   }}
                                   placeholder={lang === "vi" ? "Nhãn (vd: Ấm cúng...)" : "Badge tag..."}
-                                  className="w-24 sm:w-28 bg-stone-50 border border-stone-200 rounded px-2 py-1 text-xs text-[#9E7D4B] font-mono"
+                                  className="w-24 sm:w-28 min-w-0 bg-stone-50 border border-stone-200 rounded px-2 py-1 text-xs text-[#9E7D4B] font-mono"
                                 />
                               )}
                               <input
@@ -2107,7 +2123,7 @@ function CustomizeContent() {
                                   }));
                                 }}
                                 placeholder={t.studio.optionTitlePlaceholder}
-                                className="flex-1 bg-stone-50 border border-stone-200 rounded px-2 py-1 text-xs"
+                                className="flex-1 min-w-0 basis-0 bg-stone-50 border border-stone-200 rounded px-2 py-1 text-xs"
                               />
                               {q.type === "course_card" && (
                                 <input
@@ -2130,7 +2146,7 @@ function CustomizeContent() {
                                     }));
                                   }}
                                   placeholder={t.studio.optionSubPlaceholder}
-                                  className="flex-1 bg-stone-50 border border-stone-200 rounded px-2 py-1 text-xs"
+                                  className="flex-1 min-w-0 basis-full sm:basis-0 bg-stone-50 border border-stone-200 rounded px-2 py-1 text-xs"
                                 />
                               )}
                               <button
@@ -2149,7 +2165,8 @@ function CustomizeContent() {
                                   }));
                                 }}
                                 type="button"
-                                className="w-6 h-6 rounded-md border border-stone-200 bg-white text-stone-400 hover:text-rose-600 hover:border-rose-300 hover:bg-rose-50 flex items-center justify-center transition-all flex-shrink-0 shadow-2xs active:scale-95"
+                                className="w-11 h-11 sm:w-6 sm:h-6 rounded-md border border-stone-200 bg-white text-stone-400 hover:text-rose-600 hover:border-rose-300 hover:bg-rose-50 flex items-center justify-center transition-all flex-shrink-0 shadow-2xs active:scale-95"
+                                aria-label={lang === "vi" ? "Xóa lựa chọn này" : "Remove option"}
                                 title={lang === "vi" ? "Xóa lựa chọn này" : "Remove option"}
                               >
                                 <X className="w-3 h-3" />
@@ -2431,12 +2448,12 @@ function CustomizeContent() {
 
         {/* RIGHT COLUMN: Live Interactive iPhone Preview */}
         <div
-          className={`flex-1 flex flex-col items-center justify-center py-2 ${
+          className={`flex-1 min-w-0 flex flex-col items-center justify-center py-2 ${
             mobileView === "editor" ? "hidden lg:flex" : "flex"
           }`}
         >
           {/* Phone Mockup Frame (Realistic iPhone proportions: 375x800, isolated stacking context) */}
-          <div className="w-[375px] max-w-full h-[800px] flex-shrink-0 bg-stone-900 rounded-[52px] p-3 shadow-2xl border-4 border-stone-700/80 relative isolate z-10 flex flex-col">
+          <div className="w-[375px] max-w-full h-[min(800px,calc(100dvh-7rem))] lg:h-[min(800px,calc(100dvh-10rem))] flex-shrink-0 bg-stone-900 rounded-[52px] p-3 shadow-2xl border-4 border-stone-700/80 relative isolate z-10 flex flex-col">
             {/* Dynamic Island */}
             <div className="absolute top-6 left-1/2 -translate-x-1/2 w-28 h-5 bg-black rounded-full z-20 pointer-events-none flex items-center justify-end px-3">
               <span className="w-2.5 h-2.5 rounded-full bg-stone-800" />
@@ -2453,12 +2470,18 @@ function CustomizeContent() {
             </div>
           </div>
         </div>
-      </div>
+      </main>
 
       {/* SHAREABLE LINK MODAL */}
       {isShareModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
-          <div className="bg-[#FAF8F5] border border-stone-300 rounded-2xl max-w-[375px] w-full p-4 sm:p-5 shadow-2xl space-y-3 animate-in fade-in zoom-in-95 duration-200 my-auto">
+          <div
+            ref={shareDialogRef}
+            tabIndex={-1}
+            role="dialog"
+            aria-modal="true"
+            aria-label={t.studio.modalTitle}
+            className="bg-[#FAF8F5] border border-stone-300 rounded-2xl max-w-[375px] w-full p-4 sm:p-5 shadow-2xl space-y-3 animate-in fade-in zoom-in-95 duration-200 my-auto">
             {/* Header */}
             <div className="flex items-center justify-between border-b border-stone-200 pb-2">
               <div className="flex items-center gap-1.5">
@@ -2470,7 +2493,8 @@ function CustomizeContent() {
               <button
                 onClick={() => setIsShareModalOpen(false)}
                 type="button"
-                className="w-7 h-7 rounded-full border border-stone-200 bg-white text-stone-500 hover:text-stone-900 hover:border-stone-400 flex items-center justify-center transition-all shadow-2xs active:scale-95"
+                aria-label={lang === "vi" ? "Đóng" : "Close"}
+                className="w-11 h-11 sm:w-7 sm:h-7 rounded-full border border-stone-200 bg-white text-stone-500 hover:text-stone-900 hover:border-stone-400 flex items-center justify-center transition-all shadow-2xs active:scale-95"
               >
                 <X className="w-3.5 h-3.5" />
               </button>

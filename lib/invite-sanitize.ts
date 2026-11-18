@@ -12,8 +12,10 @@ const QUESTION_TYPES = new Set(["course_card", "tag_pills", "short_text", "long_
 const COLOR_RE = /^(#[0-9a-f]{3,8}|rgba?\([\d\s.,%]+\))$/i;
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
-// Hosts allowed to serve invite music: our Blob store and the curated BGM CDN.
-const MUSIC_HOST_RE = /(^|\.)public\.blob\.vercel-storage\.com$|^assets\.mixkit\.co$/;
+// Only our Blob store may serve custom invite music. Curated tracks other than the built-in
+// synthesized one no longer exist (the old Mixkit links are dead), so old invites fall back to it.
+const MUSIC_HOST_RE = /(^|\.)public\.blob\.vercel-storage\.com$/;
+const DEFAULT_MUSIC: { trackId: "lofi-rhodes"; title: string; artist: string } = { trackId: "lofi-rhodes", title: "Vintage Lo-Fi Rhodes", artist: "Cuộc Hẹn Nhỏ Sessions" };
 
 function clamp(value: unknown, depth = 0): unknown {
   if (depth > MAX_DEPTH) return undefined;
@@ -120,12 +122,11 @@ export function sanitizeInviteConfig(input: unknown): InvitationConfig | null {
     const music = config.music as unknown;
     if (!isPlainObject(music) || typeof music.trackId !== "string" || typeof music.title !== "string") {
       delete config.music;
-    } else if (music.url !== undefined) {
+    } else if (music.trackId !== "custom") {
+      config.music = { ...DEFAULT_MUSIC };
+    } else {
       const url = httpsUrl(music.url);
-      if (!url || !MUSIC_HOST_RE.test(url.hostname)) {
-        if (music.trackId === "custom") delete config.music;
-        else delete (config.music as { url?: string }).url;
-      }
+      if (!url || !MUSIC_HOST_RE.test(url.hostname)) delete config.music;
     }
   }
 
