@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { AnimatePresence } from "framer-motion";
 import { ScreenCover } from "@/components/ScreenCover";
@@ -27,6 +27,7 @@ interface MainWizardProps {
 export function MainWizard({
   customConfig,
   hideAudioToggle = false,
+  isRecipientPureView = false,
   className,
   invitationId,
 }: MainWizardProps) {
@@ -92,10 +93,27 @@ export function MainWizard({
   const isAtQuestion = currentStep >= 2 && currentStep <= totalQuestions + 1;
   const currentQuestionIndex = currentStep - 2;
 
+  // A new step starts at its top: reset the page and any scrolling ancestor (studio preview).
+  const rootRef = useRef<HTMLDivElement>(null);
+  const isFirstStep = useRef(true);
+  useEffect(() => {
+    if (isFirstStep.current) {
+      isFirstStep.current = false;
+      return;
+    }
+    let el: HTMLElement | null = rootRef.current;
+    while (el && el !== document.body) {
+      if (el.scrollTop > 0) el.scrollTop = 0;
+      el = el.parentElement;
+    }
+    if (isRecipientPureView) window.scrollTo(0, 0);
+  }, [currentStep, isRecipientPureView]);
+
   const watermarkText = config.cover.watermark ?? "A quiet moment for two";
 
   return (
     <div
+      ref={rootRef}
       style={{ backgroundColor: activeTheme.palette.canvas }}
       className={`relative ${
         className || "min-h-[100dvh] flex flex-col justify-center items-center px-4 py-8"
