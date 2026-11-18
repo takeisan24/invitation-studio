@@ -20,6 +20,7 @@ import { domToPng, domToBlob } from "modern-screenshot";
 import { WaxSeal } from "@/components/WaxSeal";
 import { StoryCardModal } from "@/components/StoryCardModal";
 import { soundEngine } from "@/lib/audio";
+import { useDialog } from "@/lib/use-dialog";
 import {
   InvitationConfig,
   answerLabel,
@@ -53,6 +54,8 @@ export function ScreenTicket({
   const [isExporting, setIsExporting] = useState(false);
   const [copyFeedback, setCopyFeedback] = useState<string | null>(null);
   const [showCalendarModal, setShowCalendarModal] = useState(false);
+  const calendarDialogRef = useRef<HTMLDivElement>(null);
+  useDialog(showCalendarModal, () => setShowCalendarModal(false), calendarDialogRef);
   const [isPrivacyMode, setIsPrivacyMode] = useState(false);
   const [showStoryModal, setShowStoryModal] = useState(false);
 
@@ -605,6 +608,11 @@ export function ScreenTicket({
               backgroundColor: theme.palette.cardBg,
               borderColor: theme.palette.border,
             }}
+            ref={calendarDialogRef}
+            tabIndex={-1}
+            role="dialog"
+            aria-modal="true"
+            aria-label={config.language === "en" ? "Add to calendar" : "Thêm vào lịch"}
             className="w-full max-w-sm rounded-2xl border p-5 shadow-2xl relative text-left"
           >
             <div className="flex items-start justify-between mb-4">
@@ -634,6 +642,7 @@ export function ScreenTicket({
               <button
                 type="button"
                 onClick={() => setShowCalendarModal(false)}
+                aria-label={config.language === "en" ? "Close" : "Đóng"}
                 className="p-1 rounded-full text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition-colors cursor-pointer"
               >
                 <X className="w-4 h-4" />

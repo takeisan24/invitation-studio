@@ -14,7 +14,7 @@ import {
 import { domToPng } from "modern-screenshot";
 import { WaxSeal } from "@/components/WaxSeal";
 import { soundEngine } from "@/lib/audio";
-import { useEscapeKey } from "@/lib/use-escape-key";
+import { useDialog } from "@/lib/use-dialog";
 import { InvitationConfig, answerLabel, formatEventDate, extractTimeFromAnswers } from "@/lib/date-content";
 import { ThemePreset } from "@/lib/theme-config";
 
@@ -91,7 +91,8 @@ export function StoryCardModal({
     }
   };
 
-  useEscapeKey(isOpen, onClose);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useDialog(isOpen, onClose, dialogRef);
 
   return (
     <AnimatePresence>
@@ -112,6 +113,8 @@ export function StoryCardModal({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.94, y: 15 }}
             transition={{ type: "spring", damping: 26, stiffness: 300 }}
+            ref={dialogRef}
+            tabIndex={-1}
             role="dialog"
             aria-modal="true"
             aria-label={config.language === "en" ? "Story card" : "Ảnh story"}
@@ -130,6 +133,7 @@ export function StoryCardModal({
               <button
                 type="button"
                 onClick={onClose}
+                aria-label={config.language === "en" ? "Close" : "Đóng"}
                 className="p-1 rounded-full text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition-colors cursor-pointer"
               >
                 <X className="w-4 h-4" />

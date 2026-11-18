@@ -57,7 +57,7 @@ import { AUDIO_MAX_BYTES, UploadError, uploadAsset } from "@/lib/upload-client";
 import { useSearchParams } from "next/navigation";
 import { DICTIONARY, Language } from "@/lib/i18n";
 import { soundEngine } from "@/lib/audio";
-import { useEscapeKey } from "@/lib/use-escape-key";
+import { useDialog } from "@/lib/use-dialog";
 import { ArchiveDrawer } from "@/components/ArchiveDrawer";
 import { buildAnswerLabels, saveInvitationRecord } from "@/lib/archive-storage";
 
@@ -70,7 +70,8 @@ function CustomizeContent() {
   const [isArchiveOpen, setIsArchiveOpen] = useState(() => searchParams.get("archive") === "1");
   const [activeTab, setActiveTab] = useState<"theme" | "couple" | "questions" | "ticket">("theme");
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
-  useEscapeKey(isShareModalOpen, () => setIsShareModalOpen(false));
+  const shareDialogRef = useRef<HTMLDivElement>(null);
+  useDialog(isShareModalOpen, () => setIsShareModalOpen(false), shareDialogRef);
   const [isGeneratingShare, setIsGeneratingShare] = useState(false);
   const [shareUrl, setShareUrl] = useState("");
   const [qrCodeUrl, setQrCodeUrl] = useState("");
@@ -678,7 +679,7 @@ function CustomizeContent() {
   return (
     <div className="min-h-screen bg-[#F4F1EA] text-stone-900 flex flex-col font-sans">
       {/* Studio Header */}
-      <header className="sticky top-0 z-40 bg-[#FAF8F5]/95 border-b border-stone-200 backdrop-blur-md px-4 sm:px-8 py-3 flex items-center justify-between">
+      <header className="sticky top-0 z-40 bg-[#FAF8F5]/95 border-b border-stone-200 backdrop-blur-md px-3 sm:px-8 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3 min-w-0">
           <Link
             href="/"
@@ -688,7 +689,7 @@ function CustomizeContent() {
           >
             ✦
           </Link>
-          <div className="hidden sm:block min-w-0">
+          <div className="sr-only sm:not-sr-only min-w-0">
             <h1 className="font-serif italic font-medium text-lg text-stone-900 leading-tight whitespace-nowrap">
               {t.studio.title}
             </h1>
@@ -809,10 +810,10 @@ function CustomizeContent() {
       </div>
 
       {/* Studio Workspace */}
-      <div className="flex-1 flex max-w-7xl mx-auto w-full p-4 lg:p-8 gap-8">
+      <main className="flex-1 flex max-w-7xl mx-auto w-full p-4 lg:p-8 gap-8">
         {/* LEFT COLUMN: Controls & Question Editor */}
         <div
-          className={`flex-1 flex flex-col bg-[#FAF8F5] border border-stone-300 rounded-2xl shadow-sm overflow-hidden h-[calc(100vh-100px)] min-h-[620px] ${
+          className={`flex-1 flex flex-col bg-[#FAF8F5] border border-stone-300 rounded-2xl shadow-sm overflow-hidden h-[calc(100dvh-100px)] min-h-[620px] ${
             mobileView === "preview" ? "hidden lg:flex" : "flex"
           }`}
         >
@@ -1992,9 +1993,9 @@ function CustomizeContent() {
                     className="p-4 bg-white border border-stone-300 rounded-xl space-y-3 relative shadow-xs"
                   >
                     {/* Header of Block */}
-                    <div className="flex items-center justify-between border-b border-stone-200 pb-2">
-                      <div className="flex items-center gap-2">
-                        <span className="w-6 h-6 rounded-full bg-stone-900 text-white font-mono text-xs flex items-center justify-center font-bold">
+                    <div className="flex flex-wrap items-center justify-between gap-y-2 border-b border-stone-200 pb-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="w-6 h-6 flex-shrink-0 rounded-full bg-stone-900 text-white font-mono text-xs flex items-center justify-center font-bold">
                           {idx + 1}
                         </span>
                         <span className="text-[10px] font-mono uppercase tracking-wider text-[#9E7D4B] font-semibold">
@@ -2077,7 +2078,7 @@ function CustomizeContent() {
                         </span>
                         <div className="space-y-2">
                           {q.options.map((opt) => (
-                            <div key={opt.id} className="flex items-center gap-2">
+                            <div key={opt.id} className="flex flex-wrap sm:flex-nowrap items-center gap-2">
                               {q.type === "course_card" && (
                                 <input
                                   type="text"
@@ -2099,7 +2100,7 @@ function CustomizeContent() {
                                     }));
                                   }}
                                   placeholder={lang === "vi" ? "Nhãn (vd: Ấm cúng...)" : "Badge tag..."}
-                                  className="w-24 sm:w-28 bg-stone-50 border border-stone-200 rounded px-2 py-1 text-xs text-[#9E7D4B] font-mono"
+                                  className="w-24 sm:w-28 min-w-0 bg-stone-50 border border-stone-200 rounded px-2 py-1 text-xs text-[#9E7D4B] font-mono"
                                 />
                               )}
                               <input
@@ -2122,7 +2123,7 @@ function CustomizeContent() {
                                   }));
                                 }}
                                 placeholder={t.studio.optionTitlePlaceholder}
-                                className="flex-1 bg-stone-50 border border-stone-200 rounded px-2 py-1 text-xs"
+                                className="flex-1 min-w-0 basis-0 bg-stone-50 border border-stone-200 rounded px-2 py-1 text-xs"
                               />
                               {q.type === "course_card" && (
                                 <input
@@ -2145,7 +2146,7 @@ function CustomizeContent() {
                                     }));
                                   }}
                                   placeholder={t.studio.optionSubPlaceholder}
-                                  className="flex-1 bg-stone-50 border border-stone-200 rounded px-2 py-1 text-xs"
+                                  className="flex-1 min-w-0 basis-full sm:basis-0 bg-stone-50 border border-stone-200 rounded px-2 py-1 text-xs"
                                 />
                               )}
                               <button
@@ -2164,7 +2165,8 @@ function CustomizeContent() {
                                   }));
                                 }}
                                 type="button"
-                                className="w-6 h-6 rounded-md border border-stone-200 bg-white text-stone-400 hover:text-rose-600 hover:border-rose-300 hover:bg-rose-50 flex items-center justify-center transition-all flex-shrink-0 shadow-2xs active:scale-95"
+                                className="w-11 h-11 sm:w-6 sm:h-6 rounded-md border border-stone-200 bg-white text-stone-400 hover:text-rose-600 hover:border-rose-300 hover:bg-rose-50 flex items-center justify-center transition-all flex-shrink-0 shadow-2xs active:scale-95"
+                                aria-label={lang === "vi" ? "Xóa lựa chọn này" : "Remove option"}
                                 title={lang === "vi" ? "Xóa lựa chọn này" : "Remove option"}
                               >
                                 <X className="w-3 h-3" />
@@ -2446,12 +2448,12 @@ function CustomizeContent() {
 
         {/* RIGHT COLUMN: Live Interactive iPhone Preview */}
         <div
-          className={`flex-1 flex flex-col items-center justify-center py-2 ${
+          className={`flex-1 min-w-0 flex flex-col items-center justify-center py-2 ${
             mobileView === "editor" ? "hidden lg:flex" : "flex"
           }`}
         >
           {/* Phone Mockup Frame (Realistic iPhone proportions: 375x800, isolated stacking context) */}
-          <div className="w-[375px] max-w-full h-[800px] flex-shrink-0 bg-stone-900 rounded-[52px] p-3 shadow-2xl border-4 border-stone-700/80 relative isolate z-10 flex flex-col">
+          <div className="w-[375px] max-w-full h-[min(800px,calc(100dvh-7rem))] flex-shrink-0 bg-stone-900 rounded-[52px] p-3 shadow-2xl border-4 border-stone-700/80 relative isolate z-10 flex flex-col">
             {/* Dynamic Island */}
             <div className="absolute top-6 left-1/2 -translate-x-1/2 w-28 h-5 bg-black rounded-full z-20 pointer-events-none flex items-center justify-end px-3">
               <span className="w-2.5 h-2.5 rounded-full bg-stone-800" />
@@ -2468,12 +2470,14 @@ function CustomizeContent() {
             </div>
           </div>
         </div>
-      </div>
+      </main>
 
       {/* SHAREABLE LINK MODAL */}
       {isShareModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
           <div
+            ref={shareDialogRef}
+            tabIndex={-1}
             role="dialog"
             aria-modal="true"
             aria-label={t.studio.modalTitle}
@@ -2489,7 +2493,8 @@ function CustomizeContent() {
               <button
                 onClick={() => setIsShareModalOpen(false)}
                 type="button"
-                className="w-7 h-7 rounded-full border border-stone-200 bg-white text-stone-500 hover:text-stone-900 hover:border-stone-400 flex items-center justify-center transition-all shadow-2xs active:scale-95"
+                aria-label={lang === "vi" ? "Đóng" : "Close"}
+                className="w-11 h-11 sm:w-7 sm:h-7 rounded-full border border-stone-200 bg-white text-stone-500 hover:text-stone-900 hover:border-stone-400 flex items-center justify-center transition-all shadow-2xs active:scale-95"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
