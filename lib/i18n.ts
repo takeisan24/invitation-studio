@@ -88,6 +88,7 @@ export interface Translations {
     tabQuestions: string;
     tabTicket: string;
     btnGetLink: (name: string) => string;
+    btnGetLinkShort: string;
     recTip: string;
     addQuestion: string;
     modalTitle: string;
@@ -321,6 +322,7 @@ export const DICTIONARY: Record<Language, Translations> = {
       tabQuestions: "Bộ câu hỏi",
       tabTicket: "Tấm vé & Kết",
       btnGetLink: (name: string) => `Lấy link gửi ${name || "người ấy"} 💌`,
+      btnGetLinkShort: "Lấy link 💌",
       recTip: "Khuyên dùng từ 2 đến 4 câu hỏi để giữ trải nghiệm buổi hẹn đầu nhẹ nhàng nhất.",
       addQuestion: "+ Thêm câu hỏi",
       modalTitle: "Tấm vé đã sẵn sàng gửi",
@@ -558,6 +560,7 @@ export const DICTIONARY: Record<Language, Translations> = {
       tabQuestions: "Questions",
       tabTicket: "Ticket Pass",
       btnGetLink: (name: string) => `Get Link for ${name || "Date"} 💌`,
+      btnGetLinkShort: "Get link 💌",
       recTip: "We recommend 2 to 4 questions to keep the first date experience lighthearted.",
       addQuestion: "+ Add Question",
       modalTitle: "Your Invitation Pass is Ready",
