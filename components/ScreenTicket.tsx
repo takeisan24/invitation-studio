@@ -205,7 +205,7 @@ export function ScreenTicket({
   };
 
   const eventDateStr = config.eventDate || getUpcomingDate(6);
-  const eventTimeStr = extractTimeFromAnswers(answers);
+  const eventTimeStr = extractTimeFromAnswers(answers, config.questions);
   const eventTitle =
     config.language === "en"
       ? `Date with ${config.senderName} 💌`

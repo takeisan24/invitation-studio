@@ -20,14 +20,14 @@ export interface QuestionBlock {
 }
 
 export interface MusicTrackConfig {
-  trackId: "lofi-rhodes" | "cozy-piano" | "acoustic-romance" | "custom";
+  trackId: "lofi-rhodes" | "custom";
   title: string;
   artist?: string;
   url?: string;
 }
 
 export const CURATED_TRACKS: {
-  id: "lofi-rhodes" | "cozy-piano" | "acoustic-romance";
+  id: "lofi-rhodes";
   title: { vi: string; en: string };
   artist: string;
   desc: { vi: string; en: string };
@@ -41,26 +41,6 @@ export const CURATED_TRACKS: {
       vi: "Piano điện Rhodes ấm áp, tiếng nổ đĩa than & nhịp trống chill",
       en: "Warm Rhodes piano, analog vinyl crackle & relaxed lo-fi groove",
     },
-  },
-  {
-    id: "cozy-piano",
-    title: { vi: "Midnight Café Jazz", en: "Midnight Café Jazz" },
-    artist: "Acoustic Coffee Duo",
-    desc: {
-      vi: "Giai điệu piano jazz êm dịu, không gian góc quán đêm tĩnh lặng",
-      en: "Gentle acoustic jazz piano, cozy quiet evening atmosphere",
-    },
-    url: "https://assets.mixkit.co/music/preview/mixkit-chill-bro-494.mp3",
-  },
-  {
-    id: "acoustic-romance",
-    title: { vi: "Acoustic Romance Guitar", en: "Acoustic Romance Guitar" },
-    artist: "Sunlight Strings",
-    desc: {
-      vi: "Tiếng đàn guitar mộc mạc, ngọt ngào và tự nhiên",
-      en: "Sweet acoustic guitar chords with sincere natural warmth",
-    },
-    url: "https://assets.mixkit.co/music/preview/mixkit-sleepy-cat-135.mp3",
   },
 ];
 
@@ -426,17 +406,30 @@ export function formatEventDateShort(dateStr?: string, lang: "vi" | "en" = "vi")
   return `${pad(d)}/${pad(m)}/${y}`;
 }
 
+const TIME_RE = /\b([01]?\d|2[0-3]):([0-5]\d)\b/;
+
+function findTime(text: string): string | null {
+  const match = text.match(TIME_RE);
+  return match ? `${String(match[1]).padStart(2, "0")}:${match[2]}` : null;
+}
+
 /**
- * Extracts meeting time string "HH:mm" from user answers if available, defaulting to "19:00".
+ * Extracts the meeting time "HH:mm" from the recipient's answers, defaulting to "19:00".
+ * Card answers store an option id, so when `questions` is given the chosen option's
+ * title/subtitle (e.g. "16:30 — Khi nắng dịu dần…") is searched as well.
  */
-export function extractTimeFromAnswers(answers: Record<string, string | string[]>): string {
-  for (const val of Object.values(answers)) {
-    const text = Array.isArray(val) ? val.join(" ") : String(val);
-    const match = text.match(/\b([01]?\d|2[0-3]):([0-5]\d)\b/);
-    if (match) {
-      const hour = String(match[1]).padStart(2, "0");
-      const minute = match[2];
-      return `${hour}:${minute}`;
+export function extractTimeFromAnswers(
+  answers: Record<string, string | string[]>,
+  questions?: QuestionBlock[]
+): string {
+  for (const [qid, val] of Object.entries(answers)) {
+    const values = Array.isArray(val) ? val : [String(val)];
+    const q = questions?.find((item) => item.id === qid);
+    for (const v of values) {
+      const opt = q?.options?.find((o) => o.id === v || o.title === v);
+      const found =
+        (opt && (findTime(opt.title) ?? findTime(opt.subtitle ?? ""))) ?? findTime(v);
+      if (found) return found;
     }
   }
   return "19:00";

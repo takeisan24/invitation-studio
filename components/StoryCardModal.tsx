@@ -41,7 +41,7 @@ export function StoryCardModal({
   const [feedback, setFeedback] = useState<string | null>(null);
 
   const isEn = config.language === "en";
-  const eventTimeStr = extractTimeFromAnswers(answers);
+  const eventTimeStr = extractTimeFromAnswers(answers, config.questions);
 
   const displayGuestName = isPrivacyMode
     ? config.guestName[0]?.toUpperCase() || "L"
