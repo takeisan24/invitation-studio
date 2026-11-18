@@ -18,7 +18,7 @@ function OpeningLetter({ label }: { label: string }) {
       </div>
       <p className="font-serif italic text-lg text-stone-800 mb-1">{label}</p>
       <span className="font-mono text-[11px] text-stone-500 uppercase tracking-widest">
-        Vintage Invitation Studio
+        Cuộc Hẹn Nhỏ
       </span>
     </div>
   );

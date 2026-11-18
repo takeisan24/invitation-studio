@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import {
   Sparkles,
   ArrowRight,
@@ -63,10 +64,10 @@ export default function LandingPage() {
     return `/invite#c=${encodeInvite(sampleConfig, "")}`;
   }, [lang]);
 
-  // Primary CTA logic: route to /onboarding as the mandatory guide before studio
+  // Primary CTA goes straight to the studio; the guide stays optional (see link under the CTA)
   const handleStart = () => {
     soundEngine.playPaperRustle();
-    router.push("/onboarding");
+    router.push("/customize");
   };
 
   return (
@@ -89,7 +90,7 @@ export default function LandingPage() {
           </div>
           <div>
             <span className="font-serif italic font-medium text-lg text-stone-900 block leading-tight">
-              {lang === "vi" ? "Cuộc Hẹn Nhỏ" : "A Quiet Gathering"}
+              Cuộc Hẹn Nhỏ
             </span>
             <span className="text-[10px] font-mono tracking-widest uppercase text-stone-500 block">
               {lang === "vi" ? "Thiệp mời tinh tế & riêng tư" : "Editorial & Vintage Date Studio"}
@@ -181,6 +182,14 @@ export default function LandingPage() {
             <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
           </button>
         </div>
+        <p className="mt-4 text-center">
+          <Link
+            href="/onboarding"
+            className="inline-flex items-center min-h-[44px] px-3 text-xs text-stone-600 underline underline-offset-4 hover:text-stone-900"
+          >
+            {lang === "vi" ? "Xem hướng dẫn nhanh" : "Quick guide"}
+          </Link>
+        </p>
 
         {/* Interactive Visual Mockup Card Preview (Single entry point to sample demo) */}
         <div className="mt-14 md:mt-16 relative max-w-md mx-auto">

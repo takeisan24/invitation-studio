@@ -310,12 +310,12 @@ export const DICTIONARY: Record<Language, Translations> = {
         "Chiếc vé hẹn Vintage Boarding Pass kèm con dấu sáp và thông điệp: 'Lịch trình đã xác nhận. Mọi khâu sắp xếp còn lại, để mình lo'. Bạn nam gánh vác phần tổ chức để nàng chỉ việc tận hưởng.",
       tipsTitle: "Lời khuyên vàng về Bộ câu hỏi",
       tipsDesc:
-        "Khuyên dùng từ 2 đến 4 câu hỏi ngắn gọn. Tránh hỏi dồn dập khiến đối phương cảm thấy như đang làm khảo sát xin việc.",
+        "Khuyên dùng từ 3 đến 5 câu hỏi ngắn gọn. Tránh hỏi dồn dập khiến đối phương cảm thấy như đang làm khảo sát xin việc.",
       ctaReady: "Tôi đã hiểu, vào Studio tạo thiệp ngay",
       skip: "Bỏ qua hướng dẫn",
     },
     studio: {
-      title: "Invitation Studio",
+      title: "Cuộc Hẹn Nhỏ",
       subtitle: "Tùy biến thiệp hẹn hò độc bản",
       tabTheme: "Giao diện",
       tabCouple: "Bìa & Lời ngỏ",
@@ -323,7 +323,7 @@ export const DICTIONARY: Record<Language, Translations> = {
       tabTicket: "Tấm vé & Kết",
       btnGetLink: (name: string) => `Lấy link gửi ${name || "người ấy"} 💌`,
       btnGetLinkShort: "Lấy link 💌",
-      recTip: "Khuyên dùng từ 2 đến 4 câu hỏi để giữ trải nghiệm buổi hẹn đầu nhẹ nhàng nhất.",
+      recTip: "Khuyên dùng từ 3 đến 5 câu hỏi để giữ trải nghiệm buổi hẹn đầu nhẹ nhàng nhất.",
       addQuestion: "+ Thêm câu hỏi",
       modalTitle: "Tấm vé đã sẵn sàng gửi",
       modalDesc:
@@ -548,12 +548,12 @@ export const DICTIONARY: Record<Language, Translations> = {
         "A vintage boarding pass with a personalized wax seal: 'Itinerary confirmed. Leave the rest to me.' Taking full ownership of logistics allows your date to simply relax.",
       tipsTitle: "Golden Question Rule",
       tipsDesc:
-        "We recommend 2 to 4 concise questions. Avoid making it feel like an employment questionnaire.",
+        "We recommend 3 to 5 concise questions. Avoid making it feel like an employment questionnaire.",
       ctaReady: "Got it, Enter the Studio Now",
       skip: "Skip to Studio",
     },
     studio: {
-      title: "Invitation Studio",
+      title: "Cuộc Hẹn Nhỏ",
       subtitle: "Craft your bespoke vintage invitation",
       tabTheme: "Theme",
       tabCouple: "Cover & Names",
@@ -561,7 +561,7 @@ export const DICTIONARY: Record<Language, Translations> = {
       tabTicket: "Ticket Pass",
       btnGetLink: (name: string) => `Get Link for ${name || "Date"} 💌`,
       btnGetLinkShort: "Get link 💌",
-      recTip: "We recommend 2 to 4 questions to keep the first date experience lighthearted.",
+      recTip: "We recommend 3 to 5 questions to keep the first date experience lighthearted.",
       addQuestion: "+ Add Question",
       modalTitle: "Your Invitation Pass is Ready",
       modalDesc:
