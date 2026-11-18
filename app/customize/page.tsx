@@ -262,8 +262,13 @@ function CustomizeContent() {
         } else {
           previewAudioRef.current.src = config.music.url;
         }
-        previewAudioRef.current.play().catch(() => {});
-        setIsMusicPlaying(true);
+        previewAudioRef.current
+          .play()
+          .then(() => setIsMusicPlaying(true))
+          .catch(() => {
+            setIsMusicPlaying(false);
+            showToast(lang === "vi" ? "Không phát được bài này" : "This track can't be played");
+          });
       }
     } else {
       // Offline Lo-Fi synthesizer engine
@@ -314,8 +319,11 @@ function CustomizeContent() {
       previewAudioRef.current.onended = () => {
         setPreviewingTrackId(null);
       };
-      previewAudioRef.current.play().catch(() => {});
       setPreviewingTrackId(trackId);
+      previewAudioRef.current.play().catch(() => {
+        setPreviewingTrackId(null);
+        showToast(lang === "vi" ? "Không phát được bài này" : "This track can't be played");
+      });
     }
   };
 

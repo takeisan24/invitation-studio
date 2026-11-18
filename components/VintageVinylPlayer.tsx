@@ -29,6 +29,7 @@ export function VintageVinylPlayer({
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [isMuted, setIsMuted] = useState<boolean>(false);
   const [isExpanded, setIsExpanded] = useState<boolean>(false);
+  const [playError, setPlayError] = useState<boolean>(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const isEn = lang === "en";
@@ -49,6 +50,10 @@ export function VintageVinylPlayer({
       } else {
         audioRef.current.src = activeTrack.url;
       }
+      audioRef.current.onerror = () => {
+        setIsPlaying(false);
+        setPlayError(true);
+      };
     }
 
     return () => {
@@ -77,14 +82,19 @@ export function VintageVinylPlayer({
 
       if (isBuiltInLoFi) {
         soundEngine.startMusic();
+        setPlayError(false);
+        setIsPlaying(true);
       } else if (audioRef.current) {
+        setPlayError(false);
         audioRef.current
           .play()
+          .then(() => setIsPlaying(true))
           .catch(() => {
-            // Autoplay blocked fallback
+            // Blocked or the file could not be loaded: never claim it is playing.
+            setIsPlaying(false);
+            setPlayError(true);
           });
       }
-      setIsPlaying(true);
     }
   };
 
@@ -156,7 +166,9 @@ export function VintageVinylPlayer({
               style={{ color: palette.gold }}
               className="text-[9px] font-mono tracking-widest uppercase block truncate font-semibold"
             >
-              {isPlaying ? (isEn ? "NOW PLAYING" : "ĐANG PHÁT") : isEn ? "VINYL BGM" : "NHẠC NỀN"}
+              {playError
+                ? isEn ? "CAN'T PLAY" : "KHÔNG PHÁT ĐƯỢC"
+                : isPlaying ? (isEn ? "NOW PLAYING" : "ĐANG PHÁT") : isEn ? "VINYL BGM" : "NHẠC NỀN"}
             </span>
             {isPlaying && (
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
