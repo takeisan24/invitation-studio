@@ -32,7 +32,7 @@ export default function ReplyPage() {
       </div>
     );
   }
-  if (!reply) return <InviteNotFound />;
+  if (!reply) return <InviteNotFound variant="reply" />;
 
   const isEn = reply.language === "en";
   const labels = saved?.record.labels;
