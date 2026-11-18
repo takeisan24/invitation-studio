@@ -350,6 +350,47 @@ export function formatDynamicShareMessage(
 }
 
 /**
+ * Short message the recipient sends back: who answered, the date, the chosen options and the
+ * reply link (which carries the full answers). Kept compact so it reads well in a chat bubble.
+ */
+export function formatReplyMessage(
+  config: InvitationConfig,
+  answers: Record<string, string | string[]>,
+  replyUrl: string
+): string {
+  const isEn = config.language === "en";
+  const picked: string[] = [];
+  for (const q of config.questions) {
+    if (!q.options?.length) continue;
+    const raw = answers[q.id];
+    const values = Array.isArray(raw) ? raw : raw ? [raw] : [];
+    for (const v of values) picked.push(answerLabel(q, v));
+  }
+
+  const lines: string[] = [];
+  if (config.stepTicket.customShareMessage) {
+    lines.push(
+      config.stepTicket.customShareMessage
+        .replace(/{{sender}}/g, config.senderName)
+        .replace(/{{guest}}/g, config.guestName)
+    );
+  } else {
+    lines.push(
+      isEn
+        ? `💌 ${config.guestName} has picked the details!`
+        : `💌 ${config.guestName} đã chọn xong rồi nè!`
+    );
+    if (config.eventDate) {
+      const time = extractTimeFromAnswers(answers, config.questions);
+      lines.push(`📅 ${formatEventDate(config.eventDate, config.language)} • ${time}`);
+    }
+    if (picked.length > 0) lines.push(`✦ ${picked.join(" · ")}`);
+  }
+  lines.push(isEn ? `Full answers: ${replyUrl}` : `Xem đủ câu trả lời: ${replyUrl}`);
+  return lines.join("\n");
+}
+
+/**
  * Format ISO date string (YYYY-MM-DD) to friendly localized date string.
  * Fallback to gentle phrase if not set or invalid.
  */

@@ -24,6 +24,7 @@ import {
   InvitationConfig,
   answerLabel,
   formatDynamicShareMessage,
+  formatReplyMessage,
   formatEventDate,
   extractTimeFromAnswers,
   getUpcomingDate,
@@ -86,15 +87,9 @@ export function ScreenTicket({
       language: config.language,
       guestName: config.guestName,
       answers,
-    })}`;
+    }, config.questions)}`;
 
-  const getShareMessage = () => {
-    const replyLabel =
-      config.language === "en"
-        ? "Open to save my answers in your archive:"
-        : "Mở link này để lưu câu trả lời vào hộp thư của bạn:";
-    return `${formatDynamicShareMessage(config, answers)}\n\n${replyLabel}\n${getReplyUrl()}`;
-  };
+  const getShareMessage = () => formatReplyMessage(config, answers, getReplyUrl());
 
   // 1. Native Share Handler (Direct to Zalo/Messenger/iMessage)
   const handleNativeShare = async () => {
