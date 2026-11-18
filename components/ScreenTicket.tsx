@@ -22,6 +22,7 @@ import { StoryCardModal } from "@/components/StoryCardModal";
 import { soundEngine } from "@/lib/audio";
 import {
   InvitationConfig,
+  answerLabel,
   formatDynamicShareMessage,
   formatEventDate,
   extractTimeFromAnswers,
@@ -408,7 +409,9 @@ export function ScreenTicket({
               }
 
               const isText = q.type === "short_text" || q.type === "long_text";
-              const displayVal = Array.isArray(raw) ? raw.join(", ") : raw;
+              const displayVal = Array.isArray(raw)
+                ? raw.map((v) => answerLabel(q, v)).join(", ")
+                : answerLabel(q, raw);
 
               return (
                 <div key={q.id} className="flex items-start gap-2.5">

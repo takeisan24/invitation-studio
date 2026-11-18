@@ -14,7 +14,7 @@ import {
 import { domToPng } from "modern-screenshot";
 import { WaxSeal } from "@/components/WaxSeal";
 import { soundEngine } from "@/lib/audio";
-import { InvitationConfig, formatEventDate, extractTimeFromAnswers } from "@/lib/date-content";
+import { InvitationConfig, answerLabel, formatEventDate, extractTimeFromAnswers } from "@/lib/date-content";
 import { ThemePreset } from "@/lib/theme-config";
 
 interface StoryCardModalProps {
@@ -290,7 +290,9 @@ export function StoryCardModal({
                               style={{ color: theme.palette.charcoal }}
                               className="font-medium text-[11px] block leading-snug truncate"
                             >
-                              {Array.isArray(raw) ? raw.join(", ") : raw}
+                              {Array.isArray(raw)
+                                ? raw.map((v) => answerLabel(q, v)).join(", ")
+                                : answerLabel(q, raw)}
                             </span>
                           )}
                         </div>

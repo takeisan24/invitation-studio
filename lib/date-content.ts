@@ -313,6 +313,11 @@ export const defaultInvitationConfigEn: InvitationConfig = {
 
 export const defaultInvitationConfig = defaultInvitationConfigVi;
 
+/** course_card answers store the option id; show its title instead. */
+export function answerLabel(q: QuestionBlock, v: string): string {
+  return q.options?.find((o) => o.id === v)?.title ?? v;
+}
+
 export function formatDynamicShareMessage(
   config: InvitationConfig,
   answers: Record<string, string | string[]>
@@ -333,8 +338,7 @@ export function formatDynamicShareMessage(
 
   config.questions.forEach((q) => {
     const raw = answers[q.id];
-    // course_card answers store the option id; show its title instead.
-    const label = (v: string) => q.options?.find((o) => o.id === v)?.title ?? v;
+    const label = (v: string) => answerLabel(q, v);
     if (raw) {
       if (Array.isArray(raw) && raw.length > 0) {
         lines.push(`• ${q.title}: ${raw.map(label).join(", ")}`);
