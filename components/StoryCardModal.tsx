@@ -14,6 +14,7 @@ import {
 import { domToPng } from "modern-screenshot";
 import { WaxSeal } from "@/components/WaxSeal";
 import { soundEngine } from "@/lib/audio";
+import { useEscapeKey } from "@/lib/use-escape-key";
 import { InvitationConfig, answerLabel, formatEventDate, extractTimeFromAnswers } from "@/lib/date-content";
 import { ThemePreset } from "@/lib/theme-config";
 
@@ -90,6 +91,8 @@ export function StoryCardModal({
     }
   };
 
+  useEscapeKey(isOpen, onClose);
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -109,6 +112,9 @@ export function StoryCardModal({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.94, y: 15 }}
             transition={{ type: "spring", damping: 26, stiffness: 300 }}
+            role="dialog"
+            aria-modal="true"
+            aria-label={config.language === "en" ? "Story card" : "Ảnh story"}
             className="relative z-10 w-full max-w-lg bg-[#FAF8F5] border border-stone-300 rounded-2xl shadow-2xl p-4 sm:p-6 flex flex-col items-center my-auto max-h-[96vh] overflow-y-auto"
           >
             {/* Top Toolbar */}

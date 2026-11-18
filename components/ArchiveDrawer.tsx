@@ -24,6 +24,7 @@ import {
 } from "@/lib/archive-storage";
 import { formatEventDate } from "@/lib/date-content";
 import { soundEngine } from "@/lib/audio";
+import { useEscapeKey } from "@/lib/use-escape-key";
 
 interface ArchiveDrawerProps {
   isOpen: boolean;
@@ -65,6 +66,9 @@ export function ArchiveDrawer({
 
   const isEn = lang === "en";
 
+  useEscapeKey(isOpen && !selectedItem, onClose);
+  useEscapeKey(!!selectedItem, () => setSelectedItem(null));
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -85,6 +89,9 @@ export function ArchiveDrawer({
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
             transition={{ type: "spring", damping: 28, stiffness: 280 }}
+            role="dialog"
+            aria-modal="true"
+            aria-label={isEn ? "Archive" : "Hộp thư"}
             className="relative z-10 w-full max-w-md bg-[#FAF8F5] border-l border-stone-300 shadow-2xl flex flex-col h-full"
           >
             {/* Header */}
@@ -291,6 +298,9 @@ export function ArchiveDrawer({
                   initial={{ opacity: 0, scale: 0.95, y: 10 }}
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                  role="dialog"
+                  aria-modal="true"
+                  aria-label={isEn ? "Response details" : "Chi tiết hồi âm"}
                   className="relative z-10 w-full max-w-md bg-[#FAF8F5] border border-stone-300 rounded-2xl shadow-2xl overflow-hidden p-6 text-left max-h-[85vh] flex flex-col"
                 >
                   <div className="flex items-start justify-between pb-4 border-b border-stone-200">

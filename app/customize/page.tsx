@@ -57,6 +57,7 @@ import { AUDIO_MAX_BYTES, UploadError, uploadAsset } from "@/lib/upload-client";
 import { useSearchParams } from "next/navigation";
 import { DICTIONARY, Language } from "@/lib/i18n";
 import { soundEngine } from "@/lib/audio";
+import { useEscapeKey } from "@/lib/use-escape-key";
 import { ArchiveDrawer } from "@/components/ArchiveDrawer";
 import { buildAnswerLabels, saveInvitationRecord } from "@/lib/archive-storage";
 
@@ -69,6 +70,7 @@ function CustomizeContent() {
   const [isArchiveOpen, setIsArchiveOpen] = useState(() => searchParams.get("archive") === "1");
   const [activeTab, setActiveTab] = useState<"theme" | "couple" | "questions" | "ticket">("theme");
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  useEscapeKey(isShareModalOpen, () => setIsShareModalOpen(false));
   const [isGeneratingShare, setIsGeneratingShare] = useState(false);
   const [shareUrl, setShareUrl] = useState("");
   const [qrCodeUrl, setQrCodeUrl] = useState("");
@@ -2463,7 +2465,11 @@ function CustomizeContent() {
       {/* SHAREABLE LINK MODAL */}
       {isShareModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
-          <div className="bg-[#FAF8F5] border border-stone-300 rounded-2xl max-w-[375px] w-full p-4 sm:p-5 shadow-2xl space-y-3 animate-in fade-in zoom-in-95 duration-200 my-auto">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label={t.studio.modalTitle}
+            className="bg-[#FAF8F5] border border-stone-300 rounded-2xl max-w-[375px] w-full p-4 sm:p-5 shadow-2xl space-y-3 animate-in fade-in zoom-in-95 duration-200 my-auto">
             {/* Header */}
             <div className="flex items-center justify-between border-b border-stone-200 pb-2">
               <div className="flex items-center gap-1.5">
