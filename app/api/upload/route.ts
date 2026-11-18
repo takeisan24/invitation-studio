@@ -1,83 +1,69 @@
 import { NextRequest, NextResponse } from "next/server";
+import { handleUpload, type HandleUploadBody } from "@vercel/blob/client";
+import { blobToken } from "@/lib/server/invite-store";
+import { toBucket } from "@/lib/blob-bucket";
+
+// Client uploads: the browser sends the file straight to Vercel Blob (no 4.5 MB
+// function body limit); this route only issues a short-lived, constrained token.
+const RULES = {
+  bg: {
+    contentTypes: ["image/webp", "image/jpeg", "image/png"],
+    extensions: ["webp", "jpg", "jpeg", "png"],
+    maxBytes: 5 * 1024 * 1024,
+  },
+  audio: {
+    contentTypes: ["audio/mpeg", "audio/mp4", "audio/x-m4a", "audio/aac"],
+    extensions: ["mp3", "m4a", "aac"],
+    maxBytes: 10 * 1024 * 1024,
+  },
+} as const;
+
+const PATHNAME_RE = /^assets\/(\d{4})\/(bg|audio)\.([a-z0-9]{2,4})$/;
+
+function allowedBuckets(now = new Date()): string[] {
+  // Current month plus its neighbours, to tolerate client clock skew.
+  return [-1, 0, 1].map((offset) => toBucket(new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + offset, 1))));
+}
 
 export async function POST(req: NextRequest) {
+  const token = blobToken();
+  if (!token) {
+    return NextResponse.json({ error: "storage_unavailable" }, { status: 503 });
+  }
+
+  let body: HandleUploadBody;
   try {
-    const formData = await req.formData();
-    const file = formData.get("file") as File | null;
+    body = (await req.json()) as HandleUploadBody;
+  } catch {
+    return NextResponse.json({ error: "invalid_json" }, { status: 400 });
+  }
 
-    if (!file) {
-      return NextResponse.json({ error: "No file provided" }, { status: 400 });
-    }
-
-    const isAudio =
-      file.type.startsWith("audio/") ||
-      /\.(mp3|wav|m4a|ogg|aac|webm)$/i.test(file.name);
-    const isImage = file.type.startsWith("image/");
-
-    if (!isAudio && !isImage) {
-      return NextResponse.json(
-        { error: "File must be an image (PNG, JPG, WebP) or audio (MP3, WAV, M4A)" },
-        { status: 400 }
-      );
-    }
-
-    const bucketName = isAudio ? "invitation-audio" : "invitation-backgrounds";
-    const maxLimit = isAudio ? 15 * 1024 * 1024 : 5 * 1024 * 1024;
-
-    if (file.size > maxLimit) {
-      return NextResponse.json(
-        { error: `File size exceeds ${isAudio ? "15MB" : "5MB"} limit` },
-        { status: 400 }
-      );
-    }
-
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-    if (!supabaseUrl || !supabaseKey) {
-      return NextResponse.json(
-        { error: "Supabase environment variables are missing." },
-        { status: 500 }
-      );
-    }
-
-    // Clean extension
-    const ext = file.name.split(".").pop()?.toLowerCase() || (isAudio ? "mp3" : "jpg");
-    const prefix = isAudio ? "audio" : "bg";
-    const fileName = `${prefix}-${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${ext}`;
-
-    const arrayBuffer = await file.arrayBuffer();
-
-    const uploadRes = await fetch(
-      `${supabaseUrl}/storage/v1/object/${bucketName}/${fileName}`,
-      {
-        method: "POST",
-        headers: {
-          apikey: supabaseKey,
-          Authorization: `Bearer ${supabaseKey}`,
-          "Content-Type": file.type || (isAudio ? "audio/mpeg" : "image/jpeg"),
-        },
-        body: arrayBuffer,
-      }
-    );
-
-    if (!uploadRes.ok) {
-      const errText = await uploadRes.text();
-      console.error("Supabase storage upload error:", errText);
-      return NextResponse.json(
-        { error: `Failed to upload ${isAudio ? "audio" : "image"} to cloud storage` },
-        { status: 500 }
-      );
-    }
-
-    const publicUrl = `${supabaseUrl}/storage/v1/object/public/${bucketName}/${fileName}`;
-
-    return NextResponse.json({
-      success: true,
-      url: publicUrl,
+  try {
+    const result = await handleUpload({
+      body,
+      request: req,
+      token,
+      onBeforeGenerateToken: async (pathname) => {
+        const match = PATHNAME_RE.exec(pathname);
+        if (!match || !allowedBuckets().includes(match[1])) {
+          throw new Error("invalid_pathname");
+        }
+        const rule = RULES[match[2] as keyof typeof RULES];
+        if (!(rule.extensions as readonly string[]).includes(match[3])) {
+          throw new Error("invalid_extension");
+        }
+        return {
+          allowedContentTypes: [...rule.contentTypes],
+          maximumSizeInBytes: rule.maxBytes,
+          addRandomSuffix: true,
+          allowOverwrite: false,
+          validUntil: Date.now() + 10 * 60 * 1000,
+        };
+      },
     });
+    return NextResponse.json(result);
   } catch (error) {
-    console.error("Upload API error:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    const message = error instanceof Error ? error.message : "upload_failed";
+    return NextResponse.json({ error: message }, { status: 400 });
   }
 }

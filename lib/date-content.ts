@@ -333,11 +333,13 @@ export function formatDynamicShareMessage(
 
   config.questions.forEach((q) => {
     const raw = answers[q.id];
+    // course_card answers store the option id; show its title instead.
+    const label = (v: string) => q.options?.find((o) => o.id === v)?.title ?? v;
     if (raw) {
       if (Array.isArray(raw) && raw.length > 0) {
-        lines.push(`• ${q.title}: ${raw.join(", ")}`);
+        lines.push(`• ${q.title}: ${raw.map(label).join(", ")}`);
       } else if (typeof raw === "string" && raw.trim()) {
-        lines.push(`• ${q.title}: ${raw}`);
+        lines.push(`• ${q.title}: ${label(raw)}`);
       }
     }
   });

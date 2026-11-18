@@ -132,6 +132,9 @@ export interface Translations {
     musicCustomOption: string;
     musicCustomUploadBtn: string;
     musicCustomUploading: string;
+    audioUploadTypeError: string;
+    audioUploadSizeError: string;
+    uploadUnavailable: string;
     musicCustomUrlPlaceholder: string;
     musicCustomTitlePrompt: string;
     musicCustomArtistPrompt: string;
@@ -345,7 +348,7 @@ export const DICTIONARY: Record<Language, Translations> = {
       bgUploadBtn: "Tải ảnh từ máy lên 📁",
       bgUploading: "Đang tải ảnh lên...",
       bgUploadSuccess: "Đã tải và áp dụng ảnh nền thành công! ✨",
-      bgUploadError: "Không thể tải ảnh. Vui lòng thử lại với ảnh dưới 10MB.",
+      bgUploadError: "Không thể tải ảnh. Vui lòng thử lại với ảnh JPG, PNG hoặc WebP.",
       bgOrUrl: "Hoặc dán đường dẫn ảnh trực tiếp:",
       bgRemoveBtn: "Xóa ảnh nền",
       bgImageUrlLabel: "Đường dẫn ảnh nền (Link URL):",
@@ -360,8 +363,11 @@ export const DICTIONARY: Record<Language, Translations> = {
       musicTitle: "Nhạc Nền & Đĩa Than Cổ Điển",
       musicSubtitle: "Chọn giai điệu phát khi đối phương mở thiệp hoặc tải lên bài nhạc kỷ niệm của riêng hai bạn",
       musicCustomOption: "Tải bài nhạc riêng lên",
-      musicCustomUploadBtn: "Tải file nhạc từ máy (.mp3, .m4a, .wav)",
+      musicCustomUploadBtn: "Tải file nhạc từ máy (.mp3, .m4a, tối đa 10MB)",
       musicCustomUploading: "Đang tải bài nhạc lên...",
+      audioUploadTypeError: "Vui lòng chọn file nhạc .mp3, .m4a hoặc .aac",
+      audioUploadSizeError: "Bài hát tối đa 10MB",
+      uploadUnavailable: "Tạm thời chưa tải file lên được, bạn thử lại sau nhé.",
       musicCustomUrlPlaceholder: "Hoặc dán link bài nhạc trực tiếp (MP3/M4A)...",
       musicCustomTitlePrompt: "Tên bài hát:",
       musicCustomArtistPrompt: "Nghệ sĩ / Người thể hiện:",
@@ -579,7 +585,7 @@ export const DICTIONARY: Record<Language, Translations> = {
       bgUploadBtn: "Upload photo from device 📁",
       bgUploading: "Uploading photo...",
       bgUploadSuccess: "Background photo uploaded successfully! ✨",
-      bgUploadError: "Could not upload photo. Please try again with an image under 10MB.",
+      bgUploadError: "Could not upload photo. Please try again with a JPG, PNG or WebP image.",
       bgOrUrl: "Or paste an image link directly:",
       bgRemoveBtn: "Remove background",
       bgImageUrlLabel: "Image URL:",
@@ -594,8 +600,11 @@ export const DICTIONARY: Record<Language, Translations> = {
       musicTitle: "Vinyl Background Music",
       musicSubtitle: "Choose an atmospheric soundtrack when your date opens the invitation or upload a custom favorite song",
       musicCustomOption: "Upload Custom Song",
-      musicCustomUploadBtn: "Upload audio from device (.mp3, .m4a, .wav)",
+      musicCustomUploadBtn: "Upload audio from device (.mp3, .m4a, up to 10MB)",
       musicCustomUploading: "Uploading audio track...",
+      audioUploadTypeError: "Please choose an .mp3, .m4a or .aac file",
+      audioUploadSizeError: "Audio files can be up to 10MB",
+      uploadUnavailable: "Uploads are unavailable right now. Please try again later.",
       musicCustomUrlPlaceholder: "Or paste direct audio URL (MP3/M4A)...",
       musicCustomTitlePrompt: "Track title:",
       musicCustomArtistPrompt: "Artist / Performer:",

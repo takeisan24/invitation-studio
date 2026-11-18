@@ -13,7 +13,7 @@ import {
   Inbox,
 } from "lucide-react";
 import { DICTIONARY, Language } from "@/lib/i18n";
-import { encodeConfigToUrl } from "@/lib/config-encoder";
+import { encodeInvite } from "@/lib/invite-codec";
 import {
   defaultInvitationConfigVi,
   defaultInvitationConfigEn,
@@ -60,8 +60,7 @@ export default function LandingPage() {
       senderName: lang === "en" ? "Alexander" : "Hoàng Minh",
       themeId: "alabaster",
     };
-    const code = encodeConfigToUrl(sampleConfig);
-    return `/invite?c=${code}`;
+    return `/invite#c=${encodeInvite(sampleConfig, "")}`;
   }, [lang]);
 
   // Primary CTA logic: route to /onboarding as the mandatory guide before studio
