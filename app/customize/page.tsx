@@ -813,7 +813,7 @@ function CustomizeContent() {
       <main className="flex-1 flex max-w-7xl mx-auto w-full p-4 lg:p-8 gap-8">
         {/* LEFT COLUMN: Controls & Question Editor */}
         <div
-          className={`flex-1 flex flex-col bg-[#FAF8F5] border border-stone-300 rounded-2xl shadow-sm overflow-hidden h-[calc(100dvh-100px)] min-h-[620px] ${
+          className={`flex-1 flex flex-col bg-[#FAF8F5] border border-stone-300 rounded-2xl shadow-sm overflow-hidden h-[calc(100dvh-100px)] lg:h-[calc(100dvh-9rem)] min-h-[620px] ${
             mobileView === "preview" ? "hidden lg:flex" : "flex"
           }`}
         >
@@ -2453,7 +2453,7 @@ function CustomizeContent() {
           }`}
         >
           {/* Phone Mockup Frame (Realistic iPhone proportions: 375x800, isolated stacking context) */}
-          <div className="w-[375px] max-w-full h-[min(800px,calc(100dvh-7rem))] flex-shrink-0 bg-stone-900 rounded-[52px] p-3 shadow-2xl border-4 border-stone-700/80 relative isolate z-10 flex flex-col">
+          <div className="w-[375px] max-w-full h-[min(800px,calc(100dvh-7rem))] lg:h-[min(800px,calc(100dvh-10rem))] flex-shrink-0 bg-stone-900 rounded-[52px] p-3 shadow-2xl border-4 border-stone-700/80 relative isolate z-10 flex flex-col">
             {/* Dynamic Island */}
             <div className="absolute top-6 left-1/2 -translate-x-1/2 w-28 h-5 bg-black rounded-full z-20 pointer-events-none flex items-center justify-end px-3">
               <span className="w-2.5 h-2.5 rounded-full bg-stone-800" />

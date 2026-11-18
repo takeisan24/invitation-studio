@@ -5,6 +5,19 @@ const stack: symbol[] = [];
 let lockCount = 0;
 let previousOverflow = "";
 
+// Some dialogs open after an async step, when the trigger button no longer holds focus.
+// Remember the last control that was clicked so focus can still go back to it.
+let lastClicked: HTMLElement | null = null;
+if (typeof document !== "undefined") {
+  document.addEventListener(
+    "click",
+    (e) => {
+      lastClicked = (e.target as HTMLElement | null)?.closest<HTMLElement>("button,a,[tabindex]") ?? null;
+    },
+    true
+  );
+}
+
 const FOCUSABLE =
   'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
 
@@ -23,7 +36,8 @@ export function useDialog(open: boolean, onClose: () => void, panelRef: RefObjec
     if (!open) return;
     const id = Symbol("dialog");
     stack.push(id);
-    const opener = document.activeElement as HTMLElement | null;
+    const active = document.activeElement as HTMLElement | null;
+    const opener = active && active !== document.body ? active : lastClicked;
     if (lockCount++ === 0) {
       previousOverflow = document.body.style.overflow;
       document.body.style.overflow = "hidden";
