@@ -255,9 +255,9 @@ export const DICTIONARY: Record<Language, Translations> = {
       ctaDemo: "Xem thiệp mẫu (Live Demo) ↗",
       demoHint: "✦ Chạm vào vé để trải nghiệm thiệp mẫu ↗",
       navStudio: "Vào Studio",
-      feature1Title: "Riêng Tư & Kín Đáo Tuyệt Đối",
+      feature1Title: "Riêng Tư & Kín Đáo",
       feature1Desc:
-        "Không cần đăng ký tài khoản, không lưu thông tin cá nhân. Bức thiệp chỉ thuộc về riêng hai bạn qua một đường link gửi kín đáo.",
+        "Không cần tài khoản. Câu trả lời của người nhận không lưu trên máy chủ, chỉ về tay bạn qua link họ chọn gửi. Thiệp được lưu tối đa 180 ngày rồi tự xoá.",
       feature2Title: "Hỏi Han Chu Đáo, Không Gượng Gạo",
       feature2Desc:
         "Gợi ý chọn giờ hẹn, gu ăn uống, món cần né hoặc vài dòng tâm sự ngắn. Tự nhiên như một cuộc trò chuyện ấm cúng.",
@@ -493,9 +493,9 @@ export const DICTIONARY: Record<Language, Translations> = {
       ctaDemo: "Explore Live Demo ↗",
       demoHint: "✦ Tap pass to experience live invitation ↗",
       navStudio: "Enter Studio",
-      feature1Title: "100% Private & Discrete",
+      feature1Title: "Private & Discreet",
       feature1Desc:
-        "No sign-up or accounts required. No personal data is stored on external servers. Your invitation stays strictly between the two of you.",
+        "No account needed. The recipient's answers are never stored on a server; they reach you only through the link they choose to send. Invitations are kept for up to 180 days, then deleted.",
       feature2Title: "Warm & Effortless Inquiries",
       feature2Desc:
         "Suggest meeting times, beverage tastes, dietary preferences, or a secret note. Natural and completely unpressured.",
