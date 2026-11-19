@@ -136,6 +136,8 @@ export interface Translations {
     audioUploadTypeError: string;
     audioUploadSizeError: string;
     uploadUnavailable: string;
+    tooFast: string;
+    uploadResponsibility: string;
     musicCustomUrlPlaceholder: string;
     musicCustomTitlePrompt: string;
     musicCustomArtistPrompt: string;
@@ -369,7 +371,9 @@ export const DICTIONARY: Record<Language, Translations> = {
       musicCustomUploading: "Đang tải bài nhạc lên...",
       audioUploadTypeError: "Vui lòng chọn file nhạc .mp3, .m4a hoặc .aac",
       audioUploadSizeError: "Bài hát tối đa 10MB",
-      uploadUnavailable: "Tạm thời chưa tải file lên được, bạn thử lại sau nhé.",
+      uploadUnavailable: "Tạm thời chưa tải file lên được. Nếu bạn vừa thao tác nhiều lần, hãy thử lại sau ít phút.",
+      tooFast: "Bạn thao tác hơi nhanh, thử lại sau ít phút. Link dự phòng vẫn dùng được.",
+      uploadResponsibility: "Chỉ tải file bạn có quyền dùng. File sẽ được phát công khai cho người nhận thiệp.",
       musicCustomUrlPlaceholder: "Hoặc dán link bài nhạc trực tiếp (MP3/M4A)...",
       musicCustomTitlePrompt: "Tên bài hát:",
       musicCustomArtistPrompt: "Nghệ sĩ / Người thể hiện:",
@@ -607,7 +611,9 @@ export const DICTIONARY: Record<Language, Translations> = {
       musicCustomUploading: "Uploading audio track...",
       audioUploadTypeError: "Please choose an .mp3, .m4a or .aac file",
       audioUploadSizeError: "Audio files can be up to 10MB",
-      uploadUnavailable: "Uploads are unavailable right now. Please try again later.",
+      uploadUnavailable: "Uploads are unavailable right now. If you just tried several times, please wait a few minutes.",
+      tooFast: "You are going a little fast, try again in a few minutes. The backup link still works.",
+      uploadResponsibility: "Only upload files you have the right to use. Files are shown publicly to whoever opens the invitation.",
       musicCustomUrlPlaceholder: "Or paste direct audio URL (MP3/M4A)...",
       musicCustomTitlePrompt: "Track title:",
       musicCustomArtistPrompt: "Artist / Performer:",

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { handleUpload, type HandleUploadBody } from "@vercel/blob/client";
 import { blobToken } from "@/lib/server/invite-store";
 import { toBucket } from "@/lib/blob-bucket";
+import { forbiddenOrigin, isAllowedOrigin, rateLimited } from "@/lib/server/request-guard";
 
 // Client uploads: the browser sends the file straight to Vercel Blob (no 4.5 MB
 // function body limit); this route only issues a short-lived, constrained token.
@@ -18,6 +19,8 @@ const RULES = {
   },
 } as const;
 
+const RATE = { bucket: "upload", limit: 20, windowMs: 60_000 };
+
 const PATHNAME_RE = /^assets\/(\d{4})\/(bg|audio)\.([a-z0-9]{2,4})$/;
 
 function allowedBuckets(now = new Date()): string[] {
@@ -26,6 +29,8 @@ function allowedBuckets(now = new Date()): string[] {
 }
 
 export async function POST(req: NextRequest) {
+  if (!isAllowedOrigin(req)) return forbiddenOrigin();
+
   const token = blobToken();
   if (!token) {
     return NextResponse.json({ error: "storage_unavailable" }, { status: 503 });
@@ -36,6 +41,12 @@ export async function POST(req: NextRequest) {
     body = (await req.json()) as HandleUploadBody;
   } catch {
     return NextResponse.json({ error: "invalid_json" }, { status: 400 });
+  }
+
+  // Only requests for a new upload token are counted.
+  if (body?.type === "blob.generate-client-token") {
+    const limited = rateLimited(req, RATE);
+    if (limited) return limited;
   }
 
   try {

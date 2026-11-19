@@ -504,7 +504,8 @@ function CustomizeContent() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ config }),
         });
-        const data = await res.json();
+        if (res.status === 429) showToast(t.studio.tooFast);
+        const data = res.status === 429 || res.status === 403 ? {} : await res.json();
         detectedLanIp = data.lanIp || null;
         if (res.ok && typeof data.id === "string") {
           target = { kind: "short", key: data.id, value: data.id };
@@ -1304,19 +1305,7 @@ function CustomizeContent() {
                   </div>
                 )}
 
-                {/* Or Paste Direct Link */}
-                <div className="space-y-1.5 pt-1 border-t border-stone-200">
-                  <label className="block text-xs font-mono uppercase text-stone-700">
-                    {t.studio.bgOrUrl}
-                  </label>
-                  <input
-                    type="text"
-                    value={config.backgroundImage || ""}
-                    onChange={(e) => setConfig((p) => ({ ...p, backgroundImage: e.target.value }))}
-                    placeholder={t.studio.bgImagePlaceholder}
-                    className="w-full bg-white border border-stone-300 rounded-lg px-3 py-2 text-xs text-stone-900 focus:outline-none"
-                  />
-                </div>
+                <p className="text-[10px] text-stone-500 leading-relaxed">{t.studio.uploadResponsibility}</p>
 
                 {/* Quick suggestions */}
                 <div className="space-y-1">
@@ -1415,6 +1404,7 @@ function CustomizeContent() {
                   <p className="text-xs text-stone-500 font-light mt-0.5">
                     {t.studio.musicSubtitle}
                   </p>
+                  <p className="text-[10px] text-stone-500 leading-relaxed mt-1">{t.studio.uploadResponsibility}</p>
                 </div>
 
                 {/* Hidden Audio File Input */}
