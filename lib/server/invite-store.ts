@@ -58,6 +58,13 @@ export function invitePathname(id: string): string | null {
   return null;
 }
 
+/** True when the month folder in a new-style id has already passed. Legacy ids never expire. */
+export function isInviteExpired(id: string, now = new Date()): boolean {
+  const match = NEW_ID_RE.exec(id);
+  if (!match) return false;
+  return Number(match[1]) < Number(toBucket(now));
+}
+
 export async function createInvite(
   config: InvitationConfig,
   token: string
@@ -73,7 +80,8 @@ export async function createInvite(
     contentType: "application/json",
     addRandomSuffix: false,
     allowOverwrite: false,
-    cacheControlMaxAge: 60 * 60 * 24 * 30,
+    // Invites are immutable, but a day keeps expired or removed cards from lingering in caches.
+    cacheControlMaxAge: 60 * 60 * 24,
   });
   return { id, expiresAt: expiry.toISOString() };
 }
@@ -81,7 +89,7 @@ export async function createInvite(
 export async function readInvite(id: string): Promise<InvitationConfig | null> {
   const token = blobToken();
   const pathname = invitePathname(id);
-  if (!token || !pathname) return null;
+  if (!token || !pathname || isInviteExpired(id)) return null;
 
   const res = await fetch(publicBlobUrl(token, pathname), { next: { revalidate: 86400 } });
   if (!res.ok) return null;
