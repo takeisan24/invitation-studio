@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "invalid_json" }, { status: 400 });
   }
 
-  // Only token requests count; the completion callback comes from Vercel itself.
+  // Only requests for a new upload token are counted.
   if (body?.type === "blob.generate-client-token") {
     const limited = rateLimited(req, RATE);
     if (limited) return limited;

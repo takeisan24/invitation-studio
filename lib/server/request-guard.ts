@@ -2,8 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 /**
  * Light request checks for the write endpoints: same-origin only, plus a small
- * per-IP cap kept in instance memory. The cap is a shock absorber, not a limit
- * (serverless instances do not share memory); a Vercel Firewall rule is the real one.
+ * per-client cap kept in instance memory (each serverless instance counts on its own).
  */
 
 export interface RateLimitRule {
@@ -21,8 +20,19 @@ function firstHeader(req: Pick<NextRequest, "headers">, name: string): string | 
   return value ? value.split(",")[0].trim() : null;
 }
 
+/** Groups IPv6 addresses by their /64 so one network cannot use many addresses. */
+function normalizeIp(ip: string): string {
+  if (!ip.includes(":") || ip.includes(".")) return ip;
+  const [head, tail = ""] = ip.toLowerCase().split("::");
+  const front = head ? head.split(":") : [];
+  const back = tail ? tail.split(":") : [];
+  const groups = [...front, ...Array(Math.max(0, 8 - front.length - back.length)).fill("0"), ...back];
+  return groups.slice(0, 4).map((g) => g.replace(/^0+(?=.)/, "")).join(":") + "::/64";
+}
+
 export function clientIp(req: Pick<NextRequest, "headers">): string {
-  return firstHeader(req, "x-forwarded-for") ?? firstHeader(req, "x-real-ip") ?? "local";
+  const ip = firstHeader(req, "x-real-ip") ?? firstHeader(req, "x-forwarded-for");
+  return ip ? normalizeIp(ip) : "local";
 }
 
 /**
@@ -54,6 +64,7 @@ export function isAllowedOrigin(
 export function rateLimitHit(ip: string, rule: RateLimitRule, now = Date.now()): number | null {
   const key = `${rule.bucket}:${ip}`;
   const recent = (hits.get(key) ?? []).filter((t) => now - t < rule.windowMs);
+  hits.delete(key); // re-inserted below so the Map stays ordered oldest-first
 
   if (recent.length >= rule.limit) {
     hits.set(key, recent);
@@ -64,10 +75,10 @@ export function rateLimitHit(ip: string, rule: RateLimitRule, now = Date.now()):
   hits.set(key, recent);
 
   if (hits.size > MAX_TRACKED_KEYS) {
-    for (const [k, times] of hits) {
-      if (times.every((t) => now - t >= rule.windowMs)) hits.delete(k);
+    for (const k of hits.keys()) {
+      if (hits.size <= MAX_TRACKED_KEYS) break;
+      hits.delete(k);
     }
-    if (hits.size > MAX_TRACKED_KEYS) hits.clear();
   }
   return null;
 }

@@ -23,7 +23,11 @@ export default function ReplyPage() {
     if (reply) queueMicrotask(() => setSaved(applyReply(reply)));
   }, [reply]);
 
-  const keepOld = () => setSaved((prev) => (prev ? { ...prev, status: "unchanged", incoming: undefined } : prev));
+  const [keptOld, setKeptOld] = useState(false);
+  const keepOld = () => {
+    setKeptOld(true);
+    setSaved((prev) => (prev ? { ...prev, incoming: undefined } : prev));
+  };
   const replaceOld = () => {
     if (reply) setSaved(applyReply(reply, { replace: true }));
   };
@@ -42,6 +46,7 @@ export default function ReplyPage() {
   const isEn = reply.language === "en";
   const labels = saved?.record.labels;
   const pending = saved?.status === "needs_confirm" ? saved.incoming : undefined;
+  const keptNote = keptOld && !pending;
   const history = saved?.record.history ?? [];
   const entries = Object.entries(saved?.record.answers ?? reply.answers).filter(
     ([, v]) => v && !(Array.isArray(v) && v.length === 0)
@@ -59,7 +64,11 @@ export default function ReplyPage() {
           </h1>
           {saved && !pending && (
             <p className="text-[11px] text-stone-500 font-light">
-              {saved.status === "unchanged"
+              {keptNote
+                ? isEn
+                  ? "Kept the earlier reply."
+                  : "Đã giữ câu trả lời cũ."
+                : saved.status === "unchanged"
                 ? isEn
                   ? "This reply is already saved."
                   : "Đã có hồi âm này."

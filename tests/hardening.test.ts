@@ -39,6 +39,43 @@ describe("background image hosts", () => {
   });
 });
 
+describe("background image URL shape", () => {
+  const payloads = [
+    "https://images.unsplash.com/a),url(https://tracker.example/t.gif",
+    "https://images.unsplash.com/a'); color: red; (",
+    "https://images.unsplash.com/a\";x",
+    "https://images.unsplash.com/a;background:url(x)",
+    "https://images.unsplash.com/a b.jpg",
+    "https://images.unsplash.com/a\\b.jpg",
+    "https://images.unsplash.com:8443/a.jpg",
+    "https://user:pw@images.unsplash.com/a.jpg",
+    "https://images.unsplash.com/a\nb.jpg",
+  ];
+  it.each(payloads)("drops %j", (u) => {
+    expect(bg(u)).toBeUndefined();
+  });
+  it("stores the normalized href", () => {
+    expect(bg("https://IMAGES.unsplash.com/photo-1?w=1000&q=80")).toBe("https://images.unsplash.com/photo-1?w=1000&q=80");
+  });
+});
+
+describe("custom music host", () => {
+  afterEach(() => vi.unstubAllEnvs());
+  const music = (url: string) =>
+    sanitizeInviteConfig({ ...structuredClone(defaultInvitationConfigVi), music: { trackId: "custom", title: "x", artist: "y", url } })?.music;
+
+  it("accepts only our store when the build knows it", () => {
+    vi.stubEnv("NEXT_PUBLIC_BLOB_HOST", "mine123.public.blob.vercel-storage.com");
+    const ours = "https://mine123.public.blob.vercel-storage.com/assets/2611/audio-x.mp3";
+    expect(music(ours)?.url).toBe(ours);
+    expect(music("https://other456.public.blob.vercel-storage.com/a.mp3")).toBeUndefined();
+  });
+  it("applies the same character and port rules", () => {
+    expect(music("https://abc.public.blob.vercel-storage.com:444/a.mp3")).toBeUndefined();
+    expect(music("https://abc.public.blob.vercel-storage.com/a.mp3\"x")).toBeUndefined();
+  });
+});
+
 describe("isInviteExpired", () => {
   const now = new Date(Date.UTC(2026, 10, 19)); // Nov 2026 -> 2611
   it("expires ids whose month has passed", () => {

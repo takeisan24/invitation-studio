@@ -46,7 +46,28 @@ describe("rateLimitHit", () => {
   });
 });
 
+describe("rateLimitHit memory bound", () => {
+  beforeEach(resetRateLimits);
+  it("drops the oldest keys instead of clearing everything", () => {
+    for (let i = 0; i < 5000; i++) rateLimitHit(`ip${i}`, rule, 1000);
+    for (let i = 0; i < 3; i++) rateLimitHit("hot", rule, 1000); // at its limit
+    expect(rateLimitHit("hot", rule, 1000)).not.toBeNull();
+    rateLimitHit("ip-new-1", rule, 1000);
+    rateLimitHit("ip-new-2", rule, 1000);
+    expect(rateLimitHit("hot", rule, 1000)).not.toBeNull(); // newest keys survive
+  });
+});
+
 describe("clientIp", () => {
+  it("groups IPv6 by /64", () => {
+    const a = clientIp(req({ "x-real-ip": "2001:db8:1:2:aaaa:bbbb:cccc:dddd" }));
+    const b = clientIp(req({ "x-real-ip": "2001:DB8:1:2::1" }));
+    expect(a).toBe(b);
+    expect(clientIp(req({ "x-real-ip": "2001:db8:1:3::1" }))).not.toBe(a);
+  });
+  it("prefers x-real-ip over the first forwarded address", () => {
+    expect(clientIp(req({ "x-real-ip": "7.7.7.7", "x-forwarded-for": "9.9.9.9" }))).toBe("7.7.7.7");
+  });
   it("takes the first forwarded address", () => {
     expect(clientIp(req({ "x-forwarded-for": "9.9.9.9, 10.0.0.1" }))).toBe("9.9.9.9");
   });

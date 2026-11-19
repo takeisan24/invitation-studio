@@ -504,9 +504,9 @@ function CustomizeContent() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ config }),
         });
-        const data = await res.json();
-        detectedLanIp = data.lanIp || null;
         if (res.status === 429) showToast(t.studio.tooFast);
+        const data = res.status === 429 || res.status === 403 ? {} : await res.json();
+        detectedLanIp = data.lanIp || null;
         if (res.ok && typeof data.id === "string") {
           target = { kind: "short", key: data.id, value: data.id };
         }
