@@ -21,7 +21,17 @@ export interface SavedInvitationRecord {
   updatedAt?: string | null;
   /** Question and option titles, so answers can be shown without the invite config. */
   labels?: AnswerLabels;
+  /** Earlier replies that were replaced, newest first. */
+  history?: ReplyHistoryEntry[];
 }
+
+export interface ReplyHistoryEntry {
+  answers: Record<string, string | string[]>;
+  labels?: AnswerLabels;
+  replacedAt: string;
+}
+
+const MAX_HISTORY = 10;
 
 // The archive lives only in this browser; answers arrive through /reply links.
 const STORAGE_KEY = "cuochennho_saved_invitations";
@@ -129,13 +139,57 @@ export function resolveReplyAnswers(
   return { answers, labels };
 }
 
-export function applyReply(reply: ReplyPayload): { record: SavedInvitationRecord; matched: boolean } {
+type Answers = Record<string, string | string[]>;
+
+function sameAnswers(a?: Answers | null, b?: Answers | null): boolean {
+  const norm = (x?: Answers | null) =>
+    JSON.stringify(Object.entries(x ?? {}).sort(([k1], [k2]) => (k1 < k2 ? -1 : 1)));
+  return norm(a) === norm(b);
+}
+
+export type ApplyReplyStatus =
+  /** Stored (first reply, or the sender confirmed a replacement). */
+  | "saved"
+  /** The same answers are already stored. */
+  | "unchanged"
+  /** Different answers already exist; nothing was written until the sender confirms. */
+  | "needs_confirm";
+
+export interface ApplyReplyResult {
+  record: SavedInvitationRecord;
+  matched: boolean;
+  status: ApplyReplyStatus;
+  /** Present when status is "needs_confirm": what the new link carries. */
+  incoming?: { answers: Answers; labels: AnswerLabels };
+}
+
+/**
+ * Stores a reply. Replies are not authenticated, so a different answer for an invite that
+ * already has one is not written until `replace` is set; the replaced answer is kept in `history`.
+ */
+export function applyReply(reply: ReplyPayload, options: { replace?: boolean } = {}): ApplyReplyResult {
   const now = new Date().toISOString();
   const existing = reply.key ? getSavedInvitations().find((item) => item.id === reply.key) : undefined;
   const { answers, labels } = resolveReplyAnswers(reply, existing?.labels);
+  const hasOld = !!existing?.answers && Object.keys(existing.answers).length > 0;
+
+  if (existing && hasOld) {
+    if (sameAnswers(existing.answers, answers)) return { record: existing, matched: true, status: "unchanged" };
+    if (!options.replace) {
+      return { record: existing, matched: true, status: "needs_confirm", incoming: { answers, labels } };
+    }
+  }
+
+  const history =
+    existing && hasOld
+      ? [
+          { answers: existing.answers as Answers, labels: existing.labels, replacedAt: now },
+          ...(existing.history ?? []),
+        ].slice(0, MAX_HISTORY)
+      : existing?.history;
 
   const record: SavedInvitationRecord = existing
-    ? { ...existing, answers, labels, updatedAt: now }
+    ? { ...existing, answers, labels, updatedAt: now, ...(history ? { history } : {}) }
     : {
         id: reply.key || `reply-${Date.now()}`,
         guestName: reply.guestName,
@@ -148,5 +202,5 @@ export function applyReply(reply: ReplyPayload): { record: SavedInvitationRecord
       };
 
   saveInvitationRecord(record);
-  return { record, matched: !!existing };
+  return { record, matched: !!existing, status: "saved" };
 }
