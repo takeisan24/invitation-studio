@@ -15,6 +15,24 @@ const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 // Only our Blob store may serve custom invite music. Curated tracks other than the built-in
 // synthesized one no longer exist (the old Mixkit links are dead), so old invites fall back to it.
 const MUSIC_HOST_RE = /(^|\.)public\.blob\.vercel-storage\.com$/;
+// Background images: our own Blob store (when the build knows it) and the sample photos
+// offered in the studio. Anything else is dropped so a card cannot call a third-party server.
+const BLOB_HOST_SUFFIX = ".public.blob.vercel-storage.com";
+const SAMPLE_IMAGE_HOST = "images.unsplash.com";
+
+/** Host of this project's Blob store, set at build time; undefined in local dev. */
+function projectBlobHost(): string | undefined {
+  return process.env.NEXT_PUBLIC_BLOB_HOST?.toLowerCase() || undefined;
+}
+
+export function isAllowedBackgroundImage(value: unknown, blobHost = projectBlobHost()): boolean {
+  const url = httpsUrl(value);
+  if (!url) return false;
+  const host = url.hostname.toLowerCase();
+  if (host === SAMPLE_IMAGE_HOST) return true;
+  return blobHost ? host === blobHost : host.endsWith(BLOB_HOST_SUFFIX);
+}
+
 const DEFAULT_MUSIC: { trackId: "lofi-rhodes"; title: string; artist: string } = { trackId: "lofi-rhodes", title: "Vintage Lo-Fi Rhodes", artist: "Cuộc Hẹn Nhỏ Sessions" };
 
 function clamp(value: unknown, depth = 0): unknown {
@@ -104,9 +122,7 @@ export function sanitizeInviteConfig(input: unknown): InvitationConfig | null {
     delete config.backgroundOverlayOpacity;
   }
 
-  // Senders may paste any image URL; only plain https is allowed so nothing
-  // like javascript: or data: reaches a CSS url().
-  if (config.backgroundImage !== undefined && !httpsUrl(config.backgroundImage)) {
+  if (config.backgroundImage !== undefined && !isAllowedBackgroundImage(config.backgroundImage)) {
     delete config.backgroundImage;
   }
 
