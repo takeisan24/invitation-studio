@@ -124,7 +124,7 @@ export function MainWizard({
         <>
           <div
             className="absolute inset-0 bg-cover bg-center pointer-events-none transition-opacity duration-700"
-            style={{ backgroundImage: `url(${config.backgroundImage})` }}
+            style={{ backgroundImage: `url(${JSON.stringify(config.backgroundImage)})` }}
           />
           <div
             className="absolute inset-0 pointer-events-none transition-opacity duration-500"

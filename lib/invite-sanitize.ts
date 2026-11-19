@@ -12,28 +12,52 @@ const QUESTION_TYPES = new Set(["course_card", "tag_pills", "short_text", "long_
 const COLOR_RE = /^(#[0-9a-f]{3,8}|rgba?\([\d\s.,%]+\))$/i;
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
-// Only our Blob store may serve custom invite music. Curated tracks other than the built-in
-// synthesized one no longer exist (the old Mixkit links are dead), so old invites fall back to it.
-const MUSIC_HOST_RE = /(^|\.)public\.blob\.vercel-storage\.com$/;
-// Background images: our own Blob store (when the build knows it) and the sample photos
-// offered in the studio. Anything else is dropped so a card cannot call a third-party server.
+// Custom invite music and background images may only come from this project's Blob store;
+// background images may also use the sample photos offered in the studio. Curated tracks other
+// than the built-in synthesized one no longer exist (the old Mixkit links are dead), so old
+// invites fall back to it.
 const BLOB_HOST_SUFFIX = ".public.blob.vercel-storage.com";
 const SAMPLE_IMAGE_HOST = "images.unsplash.com";
+const UNSAFE_URL_CHARS = /[\s()'"\\;<>`{}|^\u0000-\u001f\u007f]/;
+const DEFAULT_MUSIC: { trackId: "lofi-rhodes"; title: string; artist: string } = { trackId: "lofi-rhodes", title: "Vintage Lo-Fi Rhodes", artist: "Cuộc Hẹn Nhỏ Sessions" };
 
 /** Host of this project's Blob store, set at build time; undefined in local dev. */
 function projectBlobHost(): string | undefined {
   return process.env.NEXT_PUBLIC_BLOB_HOST?.toLowerCase() || undefined;
 }
 
-export function isAllowedBackgroundImage(value: unknown, blobHost = projectBlobHost()): boolean {
-  const url = httpsUrl(value);
-  if (!url) return false;
-  const host = url.hostname.toLowerCase();
-  if (host === SAMPLE_IMAGE_HOST) return true;
+function isProjectBlobHost(host: string, blobHost = projectBlobHost()): boolean {
   return blobHost ? host === blobHost : host.endsWith(BLOB_HOST_SUFFIX);
 }
 
-const DEFAULT_MUSIC: { trackId: "lofi-rhodes"; title: string; artist: string } = { trackId: "lofi-rhodes", title: "Vintage Lo-Fi Rhodes", artist: "Cuộc Hẹn Nhỏ Sessions" };
+/**
+ * Plain https URL with default port, no credentials and none of the characters that could
+ * break out of a CSS url() or attribute. Returns the normalized href, or null.
+ */
+function strictHttpsUrl(value: unknown): URL | null {
+  if (typeof value !== "string" || UNSAFE_URL_CHARS.test(value)) return null;
+  const url = httpsUrl(value);
+  if (!url || url.port !== "" || url.username || url.password || UNSAFE_URL_CHARS.test(url.href)) return null;
+  return url;
+}
+
+/** Normalized href when the URL is an allowed background image, else null. */
+export function allowedBackgroundImage(value: unknown, blobHost = projectBlobHost()): string | null {
+  const url = strictHttpsUrl(value);
+  if (!url) return null;
+  const host = url.hostname.toLowerCase();
+  return host === SAMPLE_IMAGE_HOST || isProjectBlobHost(host, blobHost) ? url.href : null;
+}
+
+export function isAllowedBackgroundImage(value: unknown, blobHost = projectBlobHost()): boolean {
+  return allowedBackgroundImage(value, blobHost) !== null;
+}
+
+/** Normalized href when the URL is allowed custom music, else null. */
+export function allowedMusicUrl(value: unknown, blobHost = projectBlobHost()): string | null {
+  const url = strictHttpsUrl(value);
+  return url && isProjectBlobHost(url.hostname.toLowerCase(), blobHost) ? url.href : null;
+}
 
 function clamp(value: unknown, depth = 0): unknown {
   if (depth > MAX_DEPTH) return undefined;
@@ -122,8 +146,10 @@ export function sanitizeInviteConfig(input: unknown): InvitationConfig | null {
     delete config.backgroundOverlayOpacity;
   }
 
-  if (config.backgroundImage !== undefined && !isAllowedBackgroundImage(config.backgroundImage)) {
-    delete config.backgroundImage;
+  if (config.backgroundImage !== undefined) {
+    const href = allowedBackgroundImage(config.backgroundImage);
+    if (href) config.backgroundImage = href;
+    else delete config.backgroundImage;
   }
 
   if (config.customPalette !== undefined) {
@@ -141,8 +167,9 @@ export function sanitizeInviteConfig(input: unknown): InvitationConfig | null {
     } else if (music.trackId !== "custom") {
       config.music = { ...DEFAULT_MUSIC };
     } else {
-      const url = httpsUrl(music.url);
-      if (!url || !MUSIC_HOST_RE.test(url.hostname)) delete config.music;
+      const href = allowedMusicUrl(music.url);
+      if (href) config.music = { ...(music as unknown as NonNullable<InvitationConfig["music"]>), url: href };
+      else delete config.music;
     }
   }
 
